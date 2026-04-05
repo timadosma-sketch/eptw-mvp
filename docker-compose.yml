@@ -1,0 +1,35 @@
+version: '3.9'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_ENV: development
+        NEXT_PUBLIC_APP_VERSION: '1.0.0-local'
+    image: eptw-mvp:local
+    container_name: eptw-app
+    ports:
+      - '3000:3000'
+    env_file:
+      - .env.local       # create from .env.example
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3000/']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    # Limit resources to catch runaway processes in dev
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+
+# Local development: run `docker compose up --build`
+# Rebuild on code change: docker compose up --build --force-recreate

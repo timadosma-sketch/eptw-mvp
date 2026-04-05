@@ -1,0 +1,24 @@
+# Build output
+.next/
+out/
+
+# Dependencies (reinstalled inside Docker)
+node_modules/
+
+# Environment files — never bake into image
+.env
+.env.*
+!.env.example
+
+# Dev/tooling files
+.git/
+.github/
+.vscode/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# README and docs
+*.md

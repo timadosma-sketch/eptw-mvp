@@ -1,0 +1,88 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+    background-color: #080C18;
+    color: #F9FAFB;
+    font-family: 'Barlow', Inter, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #__next,
+  #root {
+    height: 100%;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0D1526;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1E2D4A;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #2D4470;
+  }
+
+  /* Focus rings */
+  :focus-visible {
+    outline: 2px solid #F59E0B;
+    outline-offset: 2px;
+  }
+
+  /* Number inputs */
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    opacity: 0.4;
+  }
+
+  /* Date/time inputs */
+  input[type='datetime-local']::-webkit-calendar-picker-indicator {
+    filter: invert(0.5);
+    cursor: pointer;
+  }
+
+  /* Select options */
+  select option {
+    background-color: #0D1526;
+    color: #D1D5DB;
+  }
+}
+
+@layer components {
+  .industrial-panel {
+    @apply bg-surface-card border border-surface-border rounded-md;
+  }
+
+  .industrial-section {
+    @apply text-2xs font-bold uppercase tracking-widest text-gray-600 mb-3 pb-1 border-b border-surface-border;
+  }
+}
+
+@layer utilities {
+  .text-2xs {
+    font-size: 0.625rem;
+    line-height: 1rem;
+  }
+}
