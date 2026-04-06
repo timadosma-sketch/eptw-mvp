@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Lock, Unlock, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { PageShell, SectionHeader } from '@/components/shared/PageShell';
 import { KPICard } from '@/components/shared/KPICard';
@@ -72,13 +73,21 @@ function IsolationPointRow({ point }: { point: IsolationPoint }) {
 
 export function IsolationPage() {
   const { t } = useT();
+  const [certs, setCerts] = useState(MOCK_ISOLATION_CERTS);
 
-  const activeCount   = MOCK_ISOLATION_CERTS.filter(c => ['ISOLATED', 'VERIFIED'].includes(c.status)).length;
-  const pendingCount  = MOCK_ISOLATION_CERTS.filter(c => c.status === 'PENDING').length;
-  const verifiedCount = MOCK_ISOLATION_CERTS.filter(c => c.status === 'VERIFIED').length;
-  const releasedCount = MOCK_ISOLATION_CERTS.filter(c => c.status === 'RELEASED').length;
+  useEffect(() => {
+    fetch('/api/isolation?active=true')
+      .then(r => r.ok ? r.json() : null)
+      .then(json => { if (json?.data?.length) setCerts(json.data); })
+      .catch(() => { /* keep mock */ });
+  }, []);
 
-  const activeCerts = MOCK_ISOLATION_CERTS.filter(c => ['ISOLATED', 'VERIFIED', 'PENDING'].includes(c.status));
+  const activeCount   = certs.filter(c => ['ISOLATED', 'VERIFIED'].includes(c.status)).length;
+  const pendingCount  = certs.filter(c => c.status === 'PENDING').length;
+  const verifiedCount = certs.filter(c => c.status === 'VERIFIED').length;
+  const releasedCount = certs.filter(c => c.status === 'RELEASED').length;
+
+  const activeCerts = certs.filter(c => ['ISOLATED', 'VERIFIED', 'PENDING'].includes(c.status));
 
   const CERT_COLUMNS: Column<IsolationCertificate>[] = [
     {
@@ -204,7 +213,7 @@ export function IsolationPage() {
           <SectionHeader title={t.isolation.allCertificates} />
           <DataTable
             columns={CERT_COLUMNS}
-            data={MOCK_ISOLATION_CERTS}
+            data={certs}
             keyExtractor={c => c.id}
             emptyMessage={t.isolation.noCerts}
           />

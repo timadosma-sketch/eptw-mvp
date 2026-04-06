@@ -1,72 +1,69 @@
+// ──────────────────────────────────────────────────────────────
+// Gas Service — API-backed implementation
+// ──────────────────────────────────────────────────────────────
 import type { GasTestRecord, GasReading, Alert, IGasService } from '@/lib/types';
-import {
-  MOCK_GAS_RECORDS,
-  MOCK_GAS_ALERTS,
-  getGasRecordsByPermit,
-  getLatestReadingsByPermit,
-} from '@/lib/mock/gas';
 import { GAS_THRESHOLDS } from '@/lib/constants';
 import type { GasType, GasStatus } from '@/lib/types';
-
-const delay = (ms = 120) => new Promise(res => setTimeout(res, ms));
 
 export function classifyGasReading(gasType: GasType, value: number): GasStatus {
   const t = GAS_THRESHOLDS[gasType];
   if (!t) return 'UNKNOWN';
-
   if (gasType === 'O2') {
     if (value >= t.safeMin! && value <= t.safeMax!) return 'SAFE';
     if (value >= t.warningMin! && value <= t.warningMax!) return 'WARNING';
     return 'DANGER';
   }
-
-  // Upper-bound gases (LEL, H2S, CO, VOC)
-  if (t.safeMax !== undefined && value <= t.safeMax) return 'SAFE';
+  if (t.safeMax !== undefined    && value <= t.safeMax)   return 'SAFE';
   if (t.warningMax !== undefined && value <= t.warningMax) return 'WARNING';
   return 'DANGER';
 }
 
 export const gasService: IGasService = {
   async getGasHistory(permitId: string): Promise<GasTestRecord[]> {
-    await delay();
-    return getGasRecordsByPermit(permitId);
+    const res = await fetch(`/api/gas-tests/${permitId}`);
+    if (!res.ok) throw new Error(`getGasHistory failed: ${res.status}`);
+    const json = await res.json();
+    return json.data ?? [];
   },
 
   async getLatestReadings(permitId: string): Promise<GasReading[]> {
-    await delay(60);
-    return getLatestReadingsByPermit(permitId);
+    const res = await fetch(`/api/gas-tests/${permitId}?latest=true`);
+    if (!res.ok) throw new Error(`getLatestReadings failed: ${res.status}`);
+    const json = await res.json();
+    return json.data ?? [];
   },
 
-  async submitGasTest(permitId: string, readings: Partial<GasReading>[]): Promise<GasTestRecord> {
-    await delay(250);
-    const now = new Date().toISOString();
-    const classified = readings.map(r => ({
-      ...r,
-      status: classifyGasReading(r.gasType!, r.value!),
-    })) as GasReading[];
-    const hasDanger  = classified.some(r => r.status === 'DANGER');
-    const hasWarning = classified.some(r => r.status === 'WARNING');
-    const overallStatus: GasStatus = hasDanger ? 'DANGER' : hasWarning ? 'WARNING' : 'SAFE';
-    const record: GasTestRecord = {
-      id: `gtr-${Date.now()}`,
-      permitId,
-      permitNumber: '',
-      testedBy: readings[0]?.testedBy!,
-      testedAt: now,
-      location: readings[0]?.location ?? '',
-      readings: classified,
-      overallStatus,
-      passedAt: overallStatus === 'SAFE' ? now : undefined,
-      failedAt: overallStatus === 'DANGER' ? now : undefined,
-      reEntryRequired: overallStatus !== 'SAFE',
-      notes: '',
-    };
-    MOCK_GAS_RECORDS.push(record);
-    return record;
+  async submitGasTest(
+    permitId: string,
+    readings: Partial<GasReading>[],
+  ): Promise<GasTestRecord> {
+    const res = await fetch('/api/gas-tests', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        permitId,
+        permitNumber: readings[0]?.permitNumber ?? '',
+        testerId:     readings[0]?.testedBy?.id,
+        location:     readings[0]?.location ?? '',
+        readings: readings.map(r => ({
+          gasType:  r.gasType,
+          value:    r.value,
+          unit:     r.unit,
+          location: r.location,
+          instrument: r.instrument,
+          instrumentCalibrationDate: r.instrumentCalibrationDate,
+          notes: r.notes,
+        })),
+      }),
+    });
+    if (!res.ok) throw new Error(`submitGasTest failed: ${res.status}`);
+    return res.json();
   },
 
   async getActiveAlerts(): Promise<Alert[]> {
-    await delay(60);
-    return MOCK_GAS_ALERTS.filter(a => !a.acknowledged);
+    const res = await fetch('/api/gas-tests?alerts=true');
+    if (!res.ok) throw new Error(`getActiveAlerts failed: ${res.status}`);
+    const json = await res.json();
+    return json.data ?? [];
   },
 };

@@ -1,7 +1,7 @@
 'use client';
 
 import { Search } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PageShell } from '@/components/shared/PageShell';
 import { DataTable, Column } from '@/components/shared/DataTable';
 import { useT } from '@/lib/i18n/useT';
@@ -34,8 +34,16 @@ const ACTION_COLOR: Partial<Record<AuditAction, string>> = {
 export function AuditPage() {
   const { t } = useT();
   const [search, setSearch] = useState('');
+  const [log, setLog] = useState<AuditEntry[]>(MOCK_AUDIT_LOG);
 
-  const filtered = MOCK_AUDIT_LOG.filter(e => {
+  useEffect(() => {
+    fetch('/api/audit?pageSize=100')
+      .then(r => r.ok ? r.json() : null)
+      .then(json => { if (json?.data?.length) setLog(json.data); })
+      .catch(() => { /* keep mock */ });
+  }, []);
+
+  const filtered = log.filter(e => {
     if (!search) return true;
     const q = search.toLowerCase();
     return (
@@ -65,18 +73,18 @@ export function AuditPage() {
     {
       key: 'entity',
       header: t.audit.entity,
-      width: '130px',
+      width: '120px',
       render: e => (
         <div>
-          <div className="text-xs font-mono text-brand">{e.entityRef}</div>
+          <div className="text-xs text-gray-300 font-mono">{e.entityRef}</div>
           <div className="text-2xs text-gray-600">{e.entity}</div>
         </div>
       ),
     },
     {
-      key: 'user',
+      key: 'by',
       header: t.audit.performedBy,
-      width: '140px',
+      width: '150px',
       render: e => (
         <div>
           <div className="text-xs text-gray-300">{e.performedBy.name}</div>
@@ -88,25 +96,15 @@ export function AuditPage() {
       key: 'changes',
       header: t.audit.changes,
       render: e => {
-        if (!e.changes?.length) {
-          return (
-            <span className="text-2xs text-gray-600 italic">
-              {Object.keys(e.metadata).length > 0
-                ? Object.entries(e.metadata).map(([k, v]) => `${k}: ${String(v)}`).join(' · ')
-                : '—'
-              }
-            </span>
-          );
-        }
+        if (!e.changes?.length) return <span className="text-2xs text-gray-600">—</span>;
         return (
           <div className="space-y-0.5">
             {e.changes.map((c, i) => (
               <div key={i} className="text-2xs font-mono">
-                <span className="text-gray-500">{c.field}:</span>
-                {' '}
-                <span className="text-red-400 line-through">{String(c.oldValue ?? '∅')}</span>
+                <span className="text-gray-500">{c.field}:</span>{' '}
+                <span className="text-red-400 line-through">{String(c.oldValue ?? '—')}</span>
                 {' → '}
-                <span className="text-emerald-400">{String(c.newValue)}</span>
+                <span className="text-emerald-400">{String(c.newValue ?? '—')}</span>
               </div>
             ))}
           </div>
@@ -114,39 +112,35 @@ export function AuditPage() {
       },
     },
     {
-      key: 'device',
+      key: 'ip',
       header: t.audit.source,
       width: '120px',
-      render: e => <span className="text-2xs text-gray-600 font-mono">{e.ipAddress}</span>,
+      render: e => <span className="text-2xs font-mono text-gray-600">{e.ipAddress}</span>,
     },
   ];
 
   return (
     <PageShell
       title={t.audit.title}
-      subtitle={`${filtered.length} ${t.audit.subtitleSuffix}`}
+      subtitle={`${filtered.length} entries — immutable tamper-evident log`}
     >
-      <div className="space-y-5">
-
-        <div className="relative w-80">
+      <div className="px-1 pb-2">
+        <div className="relative max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder={t.audit.searchPlaceholder}
-            className="pl-9 pr-4 py-2 w-full text-xs bg-surface-panel border border-surface-border rounded text-gray-300 placeholder-gray-600 focus:outline-none focus:border-brand/60"
+            className="w-full pl-9 pr-3 py-2 bg-surface-raised border border-surface-border rounded text-xs text-gray-300 placeholder-gray-600 focus:outline-none focus:border-brand/50"
           />
         </div>
-
-        <DataTable
-          columns={AUDIT_COLUMNS}
-          data={filtered}
-          keyExtractor={e => e.id}
-          emptyMessage={t.audit.noEntries}
-          stickyHeader
-        />
-
       </div>
+      <DataTable
+        columns={AUDIT_COLUMNS}
+        data={filtered}
+        keyExtractor={e => e.id}
+        emptyMessage="No audit entries found"
+      />
     </PageShell>
   );
 }

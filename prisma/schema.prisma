@@ -1,0 +1,457 @@
+// ──────────────────────────────────────────────────────────────
+// ePTW Platform — Prisma Schema
+// Database: Vercel Postgres (PostgreSQL)
+// ──────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+// ─── Enums ────────────────────────────────────────────────────
+
+enum PermitStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+  CLOSED
+  EXPIRED
+  REJECTED
+  PENDING_REVALIDATION
+  TRANSFERRED
+  ARCHIVED
+}
+
+enum PermitType {
+  HOT_WORK
+  COLD_WORK
+  CONFINED_SPACE
+  ELECTRICAL
+  EXCAVATION
+  WORK_AT_HEIGHT
+  LINE_BREAKING
+  LIFTING
+  RADIOGRAPHY
+  PRESSURE_TESTING
+  OVERRIDE_BYPASS
+  COMBINED
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum UserRole {
+  PERMIT_REQUESTER
+  AREA_AUTHORITY
+  ISSUING_AUTHORITY
+  HSE_OFFICER
+  GAS_TESTER
+  ISOLATION_AUTHORITY
+  SITE_SUPERVISOR
+  CONTRACTOR_REP
+  PLANT_OPS_MANAGER
+  SYSTEM_ADMIN
+}
+
+enum GasType {
+  O2
+  LEL
+  H2S
+  CO
+  VOC
+}
+
+enum GasStatus {
+  SAFE
+  WARNING
+  DANGER
+  UNKNOWN
+}
+
+enum IsolationStatus {
+  PENDING
+  ISOLATED
+  VERIFIED
+  RELEASED
+  CANCELLED
+}
+
+enum SIMOPSCompatibility {
+  COMPATIBLE
+  CONDITIONAL
+  PROHIBITED
+}
+
+enum ApprovalDecision {
+  APPROVED
+  REJECTED
+  REFERRED_BACK
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  DANGER
+  CRITICAL
+}
+
+enum AuditAction {
+  PERMIT_CREATED
+  PERMIT_SUBMITTED
+  PERMIT_APPROVED
+  PERMIT_REJECTED
+  PERMIT_ACTIVATED
+  PERMIT_SUSPENDED
+  PERMIT_CLOSED
+  PERMIT_CANCELLED
+  GAS_TEST_RECORDED
+  GAS_TEST_FAILED
+  ISOLATION_APPLIED
+  ISOLATION_RELEASED
+  APPROVAL_SUBMITTED
+  SIMOPS_CONFLICT_RAISED
+  SHIFT_HANDOVER_COMPLETED
+  USER_LOGIN
+  USER_LOGOUT
+  SYSTEM_ALERT
+}
+
+// ─── Models ───────────────────────────────────────────────────
+
+model User {
+  id             String   @id @default(cuid())
+  employeeId     String   @unique
+  name           String
+  role           UserRole
+  department     String
+  company        String
+  email          String   @unique
+  phone          String   @default("")
+  certifications String[]
+  isContractor   Boolean  @default(false)
+  avatarInitials String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  permitsRequested       Permit[]               @relation("RequestedBy")
+  permitsAreaAuth        Permit[]               @relation("AreaAuthority")
+  permitsIssuing         Permit[]               @relation("IssuingAuthority")
+  permitsHSE             Permit[]               @relation("HSEOfficer")
+  approvals              Approval[]
+  gasTests               GasTestRecord[]
+  isolationsCertIssued   IsolationCertificate[] @relation("IssuedBy")
+  isolationsCertVerified IsolationCertificate[] @relation("VerifiedBy")
+  isolationsCertReleased IsolationCertificate[] @relation("ReleasedBy")
+  simoConflictsRaised    SIMOPSConflict[]       @relation("RaisedBy")
+  simoConflictsResolved  SIMOPSConflict[]       @relation("ResolvedBy")
+  auditEntries           AuditEntry[]
+
+  @@index([role])
+  @@index([email])
+  @@map("users")
+}
+
+model Permit {
+  id                 String       @id @default(cuid())
+  permitNumber       String       @unique
+  type               PermitType
+  status             PermitStatus @default(DRAFT)
+  riskLevel          RiskLevel
+  title              String
+  description        String       @db.Text
+  location           String
+  unit               String
+  area               String
+  equipment          String
+  requestedById      String
+  areaAuthorityId    String?
+  issuingAuthorityId String?
+  hseOfficerId       String?
+
+  requestedBy      User  @relation("RequestedBy",     fields: [requestedById],      references: [id])
+  areaAuthority    User? @relation("AreaAuthority",   fields: [areaAuthorityId],    references: [id])
+  issuingAuthority User? @relation("IssuingAuthority",fields: [issuingAuthorityId], references: [id])
+  hseOfficer       User? @relation("HSEOfficer",      fields: [hseOfficerId],       references: [id])
+
+  validFrom          DateTime
+  validTo            DateTime
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  gasTestRequired      Boolean @default(false)
+  isolationRequired    Boolean @default(false)
+  confinedSpaceEntry   Boolean @default(false)
+  hotWorkDetails       Json?
+  jsaCompleted         Boolean @default(false)
+  toolboxTalkCompleted Boolean @default(false)
+  workerCount          Int     @default(0)
+  notes                String  @default("") @db.Text
+  parentPermitId       String?
+  simopsZone           String  @default("")
+  qrCode               String  @default("")
+  offlineSync          Boolean @default(false)
+
+  contractors    ContractorEntry[]
+  attachments    Attachment[]
+  approvals      Approval[]
+  gasTests       GasTestRecord[]
+  isolationCert  IsolationCertificate?
+  simoConflictsA SIMOPSConflict[] @relation("PermitA")
+  simoConflictsB SIMOPSConflict[] @relation("PermitB")
+
+  @@index([status])
+  @@index([type])
+  @@index([riskLevel])
+  @@index([requestedById])
+  @@index([validTo])
+  @@index([createdAt(sort: Desc)])
+  @@map("permits")
+}
+
+model ContractorEntry {
+  id        String @id @default(cuid())
+  permitId  String
+  permit    Permit @relation(fields: [permitId], references: [id], onDelete: Cascade)
+  name      String
+  company   String
+  role      String
+  induction Boolean @default(false)
+
+  @@index([permitId])
+  @@map("contractor_entries")
+}
+
+model Attachment {
+  id         String   @id @default(cuid())
+  permitId   String
+  permit     Permit   @relation(fields: [permitId], references: [id], onDelete: Cascade)
+  name       String
+  type       String
+  url        String
+  uploadedAt DateTime @default(now())
+  uploadedBy String
+
+  @@index([permitId])
+  @@map("attachments")
+}
+
+model Approval {
+  id           String            @id @default(cuid())
+  permitId     String
+  permit       Permit            @relation(fields: [permitId], references: [id], onDelete: Cascade)
+  permitNumber String
+  permitType   PermitType
+  permitTitle  String
+  location     String
+  requiredRole UserRole
+  assignedToId String?
+  assignedTo   User?             @relation(fields: [assignedToId], references: [id])
+  decision     ApprovalDecision?
+  comments     String            @default("") @db.Text
+  conditions   String[]
+  decidedAt    DateTime?
+  createdAt    DateTime          @default(now())
+  dueBy        DateTime
+  priority     String            @default("P2")
+  isOverdue    Boolean           @default(false)
+
+  @@index([permitId])
+  @@index([assignedToId])
+  @@index([decision])
+  @@index([priority])
+  @@map("approvals")
+}
+
+model GasTestRecord {
+  id              String    @id @default(cuid())
+  permitId        String
+  permit          Permit    @relation(fields: [permitId], references: [id], onDelete: Cascade)
+  permitNumber    String
+  testedById      String
+  testedBy        User      @relation(fields: [testedById], references: [id])
+  testedAt        DateTime
+  location        String
+  overallStatus   GasStatus
+  passedAt        DateTime?
+  failedAt        DateTime?
+  reEntryRequired Boolean   @default(false)
+  notes           String    @default("") @db.Text
+
+  readings GasReading[]
+
+  @@index([permitId])
+  @@index([testedAt(sort: Desc)])
+  @@index([overallStatus])
+  @@map("gas_test_records")
+}
+
+model GasReading {
+  id                        String        @id @default(cuid())
+  gasTestId                 String
+  gasTest                   GasTestRecord @relation(fields: [gasTestId], references: [id], onDelete: Cascade)
+  permitId                  String
+  permitNumber              String
+  location                  String
+  gasType                   GasType
+  value                     Float
+  unit                      String
+  status                    GasStatus
+  testedById                String
+  testedAt                  DateTime
+  instrument                String
+  instrumentCalibrationDate String
+  nextTestDue               DateTime?
+  notes                     String        @default("")
+
+  @@index([gasTestId])
+  @@index([permitId])
+  @@map("gas_readings")
+}
+
+model IsolationCertificate {
+  id                String          @id @default(cuid())
+  certificateNumber String          @unique
+  permitId          String          @unique
+  permit            Permit          @relation(fields: [permitId], references: [id], onDelete: Cascade)
+  permitNumber      String
+  title             String
+  status            IsolationStatus @default(PENDING)
+  overallStatus     IsolationStatus @default(PENDING)
+  issuedById        String
+  issuedBy          User            @relation("IssuedBy",   fields: [issuedById],   references: [id])
+  verifiedById      String?
+  verifiedBy        User?           @relation("VerifiedBy", fields: [verifiedById], references: [id])
+  releasedById      String?
+  releasedBy        User?           @relation("ReleasedBy", fields: [releasedById], references: [id])
+  issuedAt          DateTime
+  verifiedAt        DateTime?
+  releasedAt        DateTime?
+  notes             String          @default("") @db.Text
+
+  isolationPoints IsolationPoint[]
+  energySources   EnergySource[]
+
+  @@index([status])
+  @@map("isolation_certificates")
+}
+
+model IsolationPoint {
+  id               String               @id @default(cuid())
+  certId           String
+  cert             IsolationCertificate @relation(fields: [certId], references: [id], onDelete: Cascade)
+  tag              String
+  description      String
+  location         String
+  isolationType    String
+  normalPosition   String
+  isolatedPosition String
+  status           IsolationStatus      @default(PENDING)
+  isolatedById     String?
+  isolatedAt       DateTime?
+  verifiedById     String?
+  verifiedAt       DateTime?
+  releasedById     String?
+  releasedAt       DateTime?
+  lockTag          String               @default("")
+  hasLock          Boolean              @default(false)
+  hasTag           Boolean              @default(false)
+
+  @@index([certId])
+  @@map("isolation_points")
+}
+
+model EnergySource {
+  id          String               @id @default(cuid())
+  certId      String
+  cert        IsolationCertificate @relation(fields: [certId], references: [id], onDelete: Cascade)
+  type        String
+  description String
+  voltage     Float?
+  pressure    Float?
+  isolated    Boolean              @default(false)
+
+  @@index([certId])
+  @@map("energy_sources")
+}
+
+model SIMOPSConflict {
+  id            String              @id @default(cuid())
+  permitAId     String
+  permitA       Permit              @relation("PermitA", fields: [permitAId], references: [id])
+  permitANumber String
+  permitAType   PermitType
+  permitBId     String
+  permitB       Permit              @relation("PermitB", fields: [permitBId], references: [id])
+  permitBNumber String
+  permitBType   PermitType
+  compatibility SIMOPSCompatibility
+  zone          String
+  raisedAt      DateTime            @default(now())
+  raisedById    String
+  raisedBy      User                @relation("RaisedBy",   fields: [raisedById],   references: [id])
+  resolvedAt    DateTime?
+  resolvedById  String?
+  resolvedBy    User?               @relation("ResolvedBy", fields: [resolvedById], references: [id])
+  resolution    String              @default("") @db.Text
+  conditions    String[]
+  isActive      Boolean             @default(true)
+
+  @@index([isActive])
+  @@index([zone])
+  @@map("simops_conflicts")
+}
+
+model AuditEntry {
+  id            String      @id @default(cuid())
+  action        AuditAction
+  entity        String
+  entityId      String
+  entityRef     String
+  performedById String
+  performedBy   User        @relation(fields: [performedById], references: [id])
+  performedAt   DateTime    @default(now())
+  ipAddress     String      @default("")
+  deviceInfo    String      @default("")
+  changes       Json?
+  metadata      Json?
+  correlationId String      @default(cuid())
+
+  @@index([entity, entityId])
+  @@index([performedById])
+  @@index([performedAt(sort: Desc)])
+  @@index([action])
+  @@map("audit_entries")
+}
+
+model Alert {
+  id             String        @id @default(cuid())
+  severity       AlertSeverity
+  title          String
+  message        String        @db.Text
+  permitId       String?
+  permitNumber   String?
+  createdAt      DateTime      @default(now())
+  acknowledged   Boolean       @default(false)
+  acknowledgedBy String?
+  acknowledgedAt DateTime?
+  autoExpires    Boolean       @default(false)
+  expiresAt      DateTime?
+
+  @@index([acknowledged])
+  @@index([severity])
+  @@index([createdAt(sort: Desc)])
+  @@map("alerts")
+}

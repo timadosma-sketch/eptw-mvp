@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import {
   FileText, CheckSquare, Wind, Clock, Users,
   AlertTriangle, Lock, GitMerge, ShieldCheck,
@@ -18,9 +19,7 @@ import { MOCK_PERMITS } from '@/lib/mock/permits';
 import { MOCK_GAS_RECORDS } from '@/lib/mock/gas';
 import { PERMIT_TYPE_CONFIG } from '@/lib/constants';
 import { formatDateTime, getTimeRemaining, truncate } from '@/lib/utils/formatters';
-import type { Permit, GasTestRecord } from '@/lib/types';
-
-const m = MOCK_DASHBOARD_METRICS;
+import type { Permit, GasTestRecord, DashboardMetrics } from '@/lib/types';
 
 function usePermitColumns(onView: (id: string) => void, t: ReturnType<typeof useT>['t']): Column<Permit>[] {
   return [
@@ -89,8 +88,25 @@ export function DashboardPage() {
   const openPermitDetail = useAppStore(s => s.openPermitDetail);
   const { t } = useT();
 
-  const activePermits = MOCK_PERMITS.filter(p => ['ACTIVE', 'APPROVED', 'UNDER_REVIEW'].includes(p.status));
-  const recentGas     = MOCK_GAS_RECORDS.slice(0, 5);
+  // Start with mock data so the UI renders immediately, then replace with DB data
+  const [m, setM] = useState<DashboardMetrics>(MOCK_DASHBOARD_METRICS);
+  const [allPermits, setAllPermits] = useState<Permit[]>(MOCK_PERMITS);
+  const [gasRecords, setGasRecords] = useState<GasTestRecord[]>(MOCK_GAS_RECORDS);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/dashboard').then(r => r.ok ? r.json() : null),
+      fetch('/api/permits?pageSize=50').then(r => r.ok ? r.json() : null),
+      fetch('/api/gas-tests').then(r => r.ok ? r.json() : null),
+    ]).then(([dash, permits, gas]) => {
+      if (dash?.metrics)   setM(dash.metrics);
+      if (permits?.data)   setAllPermits(permits.data);
+      if (gas?.data)       setGasRecords(gas.data);
+    }).catch(() => { /* silently keep mock data */ });
+  }, []);
+
+  const activePermits = allPermits.filter(p => ['ACTIVE', 'APPROVED', 'UNDER_REVIEW'].includes(p.status));
+  const recentGas     = gasRecords.slice(0, 5);
 
   const GAS_COLUMNS: Column<GasTestRecord>[] = [
     {
@@ -138,153 +154,66 @@ export function DashboardPage() {
 
         <AlertPanel />
 
-        {/* KPI row 1 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-4 gap-4">
-          <KPICard
-            label={t.dashboard.activePermits}
-            value={m.activePermits}
-            subValue={t.dashboard.currentlyInProgress}
-            icon={FileText}
-            variant="default"
-            pulse
-          />
-          <KPICard
-            label={t.dashboard.pendingApprovals}
-            value={m.pendingApprovals}
-            subValue={`${m.overdueApprovals} ${t.common.overdue}`}
-            icon={CheckSquare}
-            variant={m.overdueApprovals > 0 ? 'danger' : 'info'}
-          />
-          <KPICard
-            label={t.dashboard.gasAlerts}
-            value={m.gasAlerts}
-            subValue={t.dashboard.activeExceedances}
-            icon={Wind}
-            variant={m.gasAlerts > 0 ? 'danger' : 'success'}
-            pulse={m.gasAlerts > 0}
-          />
-          <KPICard
-            label={t.dashboard.expiringToday}
-            value={m.expiringToday}
-            subValue={`${m.expiringTomorrow} ${t.dashboard.tomorrow}`}
-            icon={Clock}
-            variant={m.expiringToday > 0 ? 'warning' : 'default'}
-          />
+        {/* KPI Row 1 */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <KPICard label={t.dashboard.activePermits}    value={m.activePermits}    icon={FileText}    />
+          <KPICard label={t.dashboard.pendingApprovals} value={m.pendingApprovals} icon={CheckSquare} variant="warning"  subValue={m.overdueApprovals > 0 ? `${m.overdueApprovals} overdue` : '0 overdue'} />
+          <KPICard label={t.dashboard.gasAlerts}        value={m.gasAlerts}        icon={Wind}        variant="danger"   subValue="active exceedances" />
+          <KPICard label={t.dashboard.expiringToday}    value={m.expiringToday}    icon={Clock}       variant="warning"  subValue={`${m.expiringTomorrow} tomorrow`} />
         </div>
 
-        {/* KPI row 2 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <KPICard
-            label={t.dashboard.suspended}
-            value={m.suspendedPermits}
-            icon={AlertTriangle}
-            variant={m.suspendedPermits > 0 ? 'warning' : 'default'}
-          />
-          <KPICard
-            label={t.dashboard.openIsolations}
-            value={m.openIsolations}
-            icon={Lock}
-            variant="default"
-          />
-          <KPICard
-            label={t.dashboard.simopsConflicts}
-            value={m.simoConflicts}
-            icon={GitMerge}
-            variant={m.simoConflicts > 0 ? 'warning' : 'default'}
-          />
-          <KPICard
-            label={t.dashboard.workersOnSite}
-            value={m.totalWorkersOnSite}
-            subValue={t.dashboard.allZones}
-            icon={Users}
-            variant="default"
-          />
+        {/* KPI Row 2 */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <KPICard label={t.dashboard.suspended}         value={m.suspendedPermits}   icon={AlertTriangle} variant="warning" />
+          <KPICard label={t.dashboard.openIsolations}    value={m.openIsolations}     icon={Lock}          variant="warning" />
+          <KPICard label={t.dashboard.simopsConflicts}   value={m.simoConflicts}      icon={GitMerge}      variant="danger"  />
+          <KPICard label={t.dashboard.workersOnSite}     value={m.totalWorkersOnSite} icon={Users}         variant="info"    subValue="all zones" />
         </div>
 
-        {/* Safety score strip */}
-        <div className="flex items-center gap-6 px-5 py-4 rounded-md border border-surface-border bg-surface-card">
-          <div className="flex items-center gap-3">
-            <ShieldCheck className="w-8 h-8 text-emerald-400 flex-shrink-0" />
-            <div>
-              <div className="text-2xs text-gray-500 uppercase tracking-wider font-semibold">{t.dashboard.safetyScore}</div>
-              <div className="text-2xl font-bold text-emerald-400 font-mono">{m.safetyScore}/100</div>
-            </div>
-          </div>
-          <div className="flex-1 h-2 bg-surface-panel rounded-full overflow-hidden">
-            <div
-              className="h-full bg-emerald-500 rounded-full transition-all"
-              style={{ width: `${m.safetyScore}%` }}
-            />
-          </div>
-          <div className="flex items-center gap-3 text-right">
-            <Activity className="w-4 h-4 text-brand flex-shrink-0" />
-            <div>
-              <div className="text-2xs text-gray-500 uppercase tracking-wider font-semibold">{t.dashboard.daysWithoutIncident}</div>
-              <div className="text-2xl font-bold text-brand font-mono">{m.daysWithoutIncident}</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 text-right">
-            <TrendingUp className="w-4 h-4 text-blue-400 flex-shrink-0" />
-            <div>
-              <div className="text-2xs text-gray-500 uppercase tracking-wider font-semibold">{t.dashboard.mttr}</div>
-              <div className="text-2xl font-bold text-blue-400 font-mono">{m.mttrMinutes}m</div>
-            </div>
-          </div>
+        {/* Safety strip */}
+        <div className="grid grid-cols-3 gap-3">
+          <KPICard label={t.hse.safetyScoreLabel}           value={`${m.safetyScore}/100`} icon={ShieldCheck} variant="success" />
+          <KPICard label={t.dashboard.daysWithoutIncident}  value={m.daysWithoutIncident}  icon={Activity}    variant="success" />
+          <KPICard label={t.dashboard.mttr}                 value={`${m.mttrMinutes}m`}    icon={TrendingUp}  variant="info"    />
         </div>
 
         {/* Tables */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <div>
-            <SectionHeader
-              title={t.dashboard.activeAndInProgress}
-              actions={
-                <Button variant="ghost" size="xs" onClick={() => {}}>{t.common.viewAll}</Button>
-              }
-            />
+            <SectionHeader title={t.dashboard.activeAndInProgress} />
             <DataTable
               columns={permitColumns}
               data={activePermits}
-              keyExtractor={p => p.id}
-              onRowClick={p => openPermitDetail(p.id)}
-              emptyMessage={t.dashboard.noActivePermits}
+              keyExtractor={r => r.id}
+              onRowClick={r => openPermitDetail(r.id)}
+              emptyMessage="No active permits"
             />
           </div>
-
           <div>
-            <SectionHeader
-              title={t.dashboard.recentGasTests}
-              actions={
-                <Button variant="ghost" size="xs">{t.common.viewAll}</Button>
-              }
-            />
+            <SectionHeader title={t.dashboard.recentGasTests} />
             <DataTable
               columns={GAS_COLUMNS}
               data={recentGas}
               keyExtractor={r => r.id}
-              emptyMessage={t.dashboard.noGasTests}
+              emptyMessage="No gas tests recorded"
             />
           </div>
         </div>
 
-        {/* Permit by type */}
+        {/* Permit type breakdown */}
         <div>
-          <SectionHeader title={t.dashboard.permitsByType} />
-          <div className="flex flex-wrap gap-3">
-            {(Object.entries(m.permitsByType) as [string, number][])
+          <SectionHeader title="ACTIVE PERMITS BY TYPE" />
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(m.permitsByType)
               .filter(([, count]) => count > 0)
-              .map(([type, count]) => {
-                const cfg = PERMIT_TYPE_CONFIG[type as keyof typeof PERMIT_TYPE_CONFIG];
-                return (
-                  <div
-                    key={type}
-                    className="flex items-center gap-2 px-3 py-2 rounded border border-surface-border bg-surface-card text-xs"
-                  >
-                    <span className="font-mono font-bold text-gray-400">{cfg.shortLabel}</span>
-                    <span className="text-gray-600">·</span>
-                    <span className="font-bold text-white">{count}</span>
-                  </div>
-                );
-              })}
+              .sort(([, a], [, b]) => b - a)
+              .map(([type, count]) => (
+                <div key={type} className="flex items-center gap-1.5 px-2.5 py-1 bg-surface-raised border border-surface-border rounded text-xs">
+                  <span className="text-gray-300">{PERMIT_TYPE_CONFIG[type as Permit['type']]?.shortLabel ?? type}</span>
+                  <span className="text-gray-600">·</span>
+                  <span className="text-brand font-semibold">{count}</span>
+                </div>
+              ))}
           </div>
         </div>
 
