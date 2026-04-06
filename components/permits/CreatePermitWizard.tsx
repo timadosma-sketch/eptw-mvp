@@ -7,6 +7,7 @@ import { Button } from '@/components/shared/Button';
 import { useAppStore } from '@/lib/store/useAppStore';
 import { useT } from '@/lib/i18n/useT';
 import { CREATE_PERMIT_STEPS, PERMIT_TYPE_CONFIG } from '@/lib/constants';
+import { permitService } from '@/lib/services/permitService';
 import { cn } from '@/lib/utils/cn';
 import type { PermitType } from '@/lib/types';
 
@@ -248,11 +249,29 @@ export function CreatePermitWizard() {
   };
 
   const handleSubmit = async () => {
+    if (!permitType) return;
     setIsSubmitting(true);
-    await new Promise(r => setTimeout(r, 800));
-    setIsSubmitting(false);
-    closeWizard();
-    showToast('Permit submitted for approval. Reference: PTW-2024-0849', 'success');
+    try {
+      const permit = await permitService.createPermit({
+        type:        permitType,
+        riskLevel:   riskLevel as 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL',
+        title:       workDetails.title       ?? '',
+        description: workDetails.description ?? '',
+        location:    workDetails.location    ?? '',
+        unit:        workDetails.unit        ?? '',
+        area:        workDetails.area        ?? '',
+        equipment:   workDetails.equipment   ?? '',
+        validFrom:   workDetails.validFrom   ?? new Date().toISOString(),
+        validTo:     workDetails.validTo     ?? new Date().toISOString(),
+        workerCount: workDetails.workerCount ?? 1,
+      });
+      closeWizard();
+      showToast(`Permit ${permit.permitNumber} submitted for approval.`, 'success');
+    } catch {
+      showToast('Failed to submit permit. Please try again.', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const stepContent = () => {

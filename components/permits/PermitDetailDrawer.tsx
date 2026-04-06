@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import {
   MapPin, Wind, AlertTriangle, CheckCircle2, XCircle, Paperclip,
 } from 'lucide-react';
@@ -8,12 +9,10 @@ import { PermitStatusBadge, RiskBadge, GasStatusBadge } from '@/components/share
 import { Button } from '@/components/shared/Button';
 import { useAppStore } from '@/lib/store/useAppStore';
 import { useT } from '@/lib/i18n/useT';
-import { MOCK_PERMITS } from '@/lib/mock/permits';
-import { getIsolationByPermit } from '@/lib/mock/isolation';
-import { getGasRecordsByPermit } from '@/lib/mock/gas';
 import { PERMIT_TYPE_CONFIG } from '@/lib/constants';
 import { formatDateTime, getTimeRemaining } from '@/lib/utils/formatters';
 import { cn } from '@/lib/utils/cn';
+import type { Permit, IsolationCertificate, GasTestRecord } from '@/lib/types';
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -43,23 +42,60 @@ export function PermitDetailDrawer() {
   const showToast         = useAppStore(s => s.showToast);
   const { t } = useT();
 
-  const permit = MOCK_PERMITS.find(p => p.id === selectedPermitId);
+  const [permit,    setPermit]    = useState<Permit | null>(null);
+  const [isolation, setIsolation] = useState<IsolationCertificate | null>(null);
+  const [gasRecords, setGasRecords] = useState<GasTestRecord[]>([]);
+  const [acting,    setActing]    = useState(false);
+
+  useEffect(() => {
+    if (!selectedPermitId || !permitDetailOpen) return;
+    setPermit(null);
+
+    fetch(`/api/permits/${selectedPermitId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setPermit(d); })
+      .catch(() => {});
+
+    fetch(`/api/isolation/${selectedPermitId}?byPermit=true`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.data?.[0]) setIsolation(d.data[0]); else setIsolation(null); })
+      .catch(() => {});
+
+    fetch(`/api/gas-tests/${selectedPermitId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.data) setGasRecords(d.data); else setGasRecords([]); })
+      .catch(() => {});
+  }, [selectedPermitId, permitDetailOpen]);
+
   if (!permit) return null;
 
-  const typeCfg    = PERMIT_TYPE_CONFIG[permit.type];
-  const isolation  = getIsolationByPermit(permit.id);
-  const gasRecords = getGasRecordsByPermit(permit.id);
-  const latestGas  = gasRecords[gasRecords.length - 1];
+  const typeCfg  = PERMIT_TYPE_CONFIG[permit.type];
+  const latestGas = gasRecords[gasRecords.length - 1];
 
-  const handleSuspend = () => {
-    showToast('Permit suspended. All workers notified.', 'warning');
-    closePermitDetail();
+  const changeStatus = async (status: string, successMsg: string) => {
+    setActing(true);
+    try {
+      const res = await fetch(`/api/permits/${permit.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      if (res.ok) {
+        showToast(successMsg, status === 'SUSPENDED' ? 'warning' : 'success');
+        closePermitDetail();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showToast(err.error || 'Action failed. Please try again.', 'error');
+      }
+    } catch {
+      showToast('Network error. Please try again.', 'error');
+    } finally {
+      setActing(false);
+    }
   };
 
-  const handleClose = () => {
-    showToast('Permit closed successfully.', 'success');
-    closePermitDetail();
-  };
+  const handleSuspend = () => changeStatus('SUSPENDED', 'Permit suspended. All workers notified.');
+  const handleClose   = () => changeStatus('CLOSED',    'Permit closed successfully.');
 
   return (
     <Drawer
@@ -201,12 +237,12 @@ export function PermitDetailDrawer() {
               </Button>
             )}
             {permit.status === 'ACTIVE' && (
-              <Button variant="warning" size="sm" icon={AlertTriangle} onClick={handleSuspend}>
+              <Button variant="warning" size="sm" icon={AlertTriangle} loading={acting} onClick={handleSuspend}>
                 {t.permitDetail.suspend}
               </Button>
             )}
             {permit.status === 'ACTIVE' && (
-              <Button variant="success" size="sm" icon={CheckCircle2} onClick={handleClose}>
+              <Button variant="success" size="sm" icon={CheckCircle2} loading={acting} onClick={handleClose}>
                 {t.permitDetail.closePermit}
               </Button>
             )}

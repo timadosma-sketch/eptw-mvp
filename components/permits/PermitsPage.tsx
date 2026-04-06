@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Search, Plus, RefreshCw } from 'lucide-react';
 import { PageShell } from '@/components/shared/PageShell';
 import { DataTable, Column } from '@/components/shared/DataTable';
@@ -27,9 +27,17 @@ export function PermitsPage() {
   const [search,   setSearch]   = useState('');
   const [statusF,  setStatusF]  = useState<PermitStatus | ''>('');
   const [typeF,    setTypeF]    = useState<PermitType | ''>('');
+  const [permits,  setPermits]  = useState<Permit[]>(MOCK_PERMITS);
+
+  useEffect(() => {
+    fetch('/api/permits?pageSize=100')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.data?.length) setPermits(d.data); })
+      .catch(() => {});
+  }, []);
 
   const filtered = useMemo(() => {
-    return MOCK_PERMITS.filter(p => {
+    return permits.filter(p => {
       if (statusF && p.status !== statusF) return false;
       if (typeF   && p.type   !== typeF)   return false;
       if (search) {
@@ -42,7 +50,7 @@ export function PermitsPage() {
       }
       return true;
     });
-  }, [search, statusF, typeF]);
+  }, [search, statusF, typeF, permits]);
 
   const columns: Column<Permit>[] = [
     {
@@ -180,7 +188,7 @@ export function PermitsPage() {
           <div className="ml-auto flex items-center gap-2 flex-wrap">
             {(['ACTIVE','SUBMITTED','SUSPENDED','CLOSED'] as PermitStatus[]).map(s => {
               const cfg = PERMIT_STATUS_CONFIG[s];
-              const count = MOCK_PERMITS.filter(p => p.status === s).length;
+              const count = permits.filter(p => p.status === s).length;
               return (
                 <button
                   key={s}

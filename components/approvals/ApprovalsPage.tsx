@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CheckCircle2, XCircle, RotateCcw, AlertTriangle } from 'lucide-react';
 import { PageShell } from '@/components/shared/PageShell';
 import { DataTable, Column } from '@/components/shared/DataTable';
@@ -10,6 +10,7 @@ import { Modal } from '@/components/shared/Modal';
 import { useAppStore } from '@/lib/store/useAppStore';
 import { useT } from '@/lib/i18n/useT';
 import { MOCK_APPROVALS } from '@/lib/mock/approvals';
+import { approvalService } from '@/lib/services/approvalService';
 import { PERMIT_TYPE_CONFIG, ROLE_CONFIG } from '@/lib/constants';
 import { formatDateTime, formatRelative } from '@/lib/utils/formatters';
 import { cn } from '@/lib/utils/cn';
@@ -153,22 +154,36 @@ export function ApprovalsPage() {
   const showToast = useAppStore(s => s.showToast);
   const { t } = useT();
   const [activeApproval, setActiveApproval] = useState<Approval | null>(null);
-  const [approvals, setApprovals] = useState(MOCK_APPROVALS);
+  const [pending,  setPending]  = useState<Approval[]>(MOCK_APPROVALS.filter(a => !a.decision));
+  const [history,  setHistory]  = useState<Approval[]>(MOCK_APPROVALS.filter(a =>  a.decision));
   const [tab, setTab] = useState<'pending' | 'history'>('pending');
 
-  const pending  = approvals.filter(a => !a.decision);
-  const history  = approvals.filter(a =>  a.decision);
+  const loadApprovals = () => {
+    fetch('/api/approvals?pending=true')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.data) setPending(d.data); })
+      .catch(() => {});
+    fetch('/api/approvals')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.data) setHistory(d.data.filter((a: Approval) => a.decision)); })
+      .catch(() => {});
+  };
 
-  const handleDecide = (id: string, decision: ApprovalDecision, comments: string, conditions: string[]) => {
-    setApprovals(prev => prev.map(a =>
-      a.id === id ? { ...a, decision, comments, conditions, decidedAt: new Date().toISOString() } : a
-    ));
-    const msg = decision === 'APPROVED'
-      ? 'Permit approved successfully.'
-      : decision === 'REJECTED'
-        ? 'Permit rejected. Requester notified.'
-        : 'Permit referred back for revision.';
-    showToast(msg, decision === 'APPROVED' ? 'success' : decision === 'REJECTED' ? 'error' : 'warning');
+  useEffect(() => { loadApprovals(); }, []);
+
+  const handleDecide = async (id: string, decision: ApprovalDecision, comments: string, conditions: string[]) => {
+    try {
+      await approvalService.submitDecision(id, decision, comments, conditions);
+      const msg = decision === 'APPROVED'
+        ? 'Permit approved successfully.'
+        : decision === 'REJECTED'
+          ? 'Permit rejected. Requester notified.'
+          : 'Permit referred back for revision.';
+      showToast(msg, decision === 'APPROVED' ? 'success' : decision === 'REJECTED' ? 'error' : 'warning');
+      loadApprovals();
+    } catch {
+      showToast('Failed to submit decision. Please try again.', 'error');
+    }
   };
 
   const pendingColumns: Column<Approval>[] = [
