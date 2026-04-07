@@ -217,11 +217,12 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
 }
 
 export function CreatePermitWizard() {
-  const wizardOpen  = useAppStore(s => s.wizardOpen);
-  const wizardStep  = useAppStore(s => s.wizardStep);
-  const closeWizard = useAppStore(s => s.closeWizard);
-  const setStep     = useAppStore(s => s.setWizardStep);
-  const showToast   = useAppStore(s => s.showToast);
+  const wizardOpen   = useAppStore(s => s.wizardOpen);
+  const wizardStep   = useAppStore(s => s.wizardStep);
+  const closeWizard  = useAppStore(s => s.closeWizard);
+  const setStep      = useAppStore(s => s.setWizardStep);
+  const showToast    = useAppStore(s => s.showToast);
+  const currentUser  = useAppStore(s => s.currentUser);
   const { t } = useT();
 
   const [permitType,   setPermitType]   = useState<PermitType | null>(null);
@@ -261,6 +262,7 @@ export function CreatePermitWizard() {
         unit:        workDetails.unit        ?? '',
         area:        workDetails.area        ?? '',
         equipment:   workDetails.equipment   ?? '',
+        requestedBy: currentUser,
         validFrom:   workDetails.validFrom   ?? new Date().toISOString(),
         validTo:     workDetails.validTo     ?? new Date().toISOString(),
         workerCount: workDetails.workerCount ?? 1,

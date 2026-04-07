@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
         unit:         body.unit         ?? '',
         area:         body.area         ?? '',
         equipment:    body.equipment    ?? '',
-        requestedById: body.requestedById,
+        requestedById: body.requestedById ?? 'usr-001',
         areaAuthorityId:    body.areaAuthorityId    ?? null,
         issuingAuthorityId: body.issuingAuthorityId ?? null,
         hseOfficerId:       body.hseOfficerId       ?? null,
