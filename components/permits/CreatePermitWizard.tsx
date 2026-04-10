@@ -133,7 +133,13 @@ function StepWorkDetails({
   );
 }
 
-function StepRiskAssessment({ riskLevel, onChange }: { riskLevel: string; onChange: (v: string) => void }) {
+interface RiskState {
+  level: string;
+  jsaCompleted: boolean;
+  toolboxTalk: boolean;
+}
+
+function StepRiskAssessment({ risk, onChange }: { risk: RiskState; onChange: (v: RiskState) => void }) {
   const { t } = useT();
   const levels = [
     { value: 'LOW',      label: t.risk.LOW,      desc: 'Routine work, minimal hazard exposure',           color: 'border-green-700 text-green-400' },
@@ -148,10 +154,10 @@ function StepRiskAssessment({ riskLevel, onChange }: { riskLevel: string; onChan
         {levels.map(l => (
           <button
             key={l.value}
-            onClick={() => onChange(l.value)}
+            onClick={() => onChange({ ...risk, level: l.value })}
             className={cn(
               'flex flex-col gap-1 p-3 rounded border text-left transition-all',
-              riskLevel === l.value
+              risk.level === l.value
                 ? `${l.color} bg-surface-hover`
                 : 'border-surface-border bg-surface-panel text-gray-400 hover:bg-surface-hover'
             )}
@@ -165,11 +171,21 @@ function StepRiskAssessment({ riskLevel, onChange }: { riskLevel: string; onChan
         <div className="text-xs text-gray-500 mb-1">{t.wizard.jsaStatus}</div>
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
-            <input type="checkbox" className="accent-brand" />
+            <input
+              type="checkbox"
+              className="accent-brand"
+              checked={risk.jsaCompleted}
+              onChange={e => onChange({ ...risk, jsaCompleted: e.target.checked })}
+            />
             {t.wizard.jsaCompleted}
           </label>
           <label className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
-            <input type="checkbox" className="accent-brand" />
+            <input
+              type="checkbox"
+              className="accent-brand"
+              checked={risk.toolboxTalk}
+              onChange={e => onChange({ ...risk, toolboxTalk: e.target.checked })}
+            />
             {t.wizard.toolboxPlanned}
           </label>
         </div>
@@ -178,7 +194,7 @@ function StepRiskAssessment({ riskLevel, onChange }: { riskLevel: string; onChan
   );
 }
 
-function StepReview({ type, workDetails, riskLevel }: { type: PermitType | null; workDetails: Partial<WorkDetails>; riskLevel: string }) {
+function StepReview({ type, workDetails, risk }: { type: PermitType | null; workDetails: Partial<WorkDetails>; risk: RiskState }) {
   const { t } = useT();
   if (!type) return <p className="text-xs text-gray-500">Please complete previous steps.</p>;
   const cfg = PERMIT_TYPE_CONFIG[type];
@@ -187,14 +203,16 @@ function StepReview({ type, workDetails, riskLevel }: { type: PermitType | null;
       <div className="p-4 rounded border border-brand/30 bg-brand/5">
         <div className="text-xs text-brand font-bold uppercase tracking-wider mb-3">{t.wizard.summaryTitle}</div>
         <div className="space-y-2">
-          <ReviewRow label={t.common.type}        value={cfg.label} />
-          <ReviewRow label="Risk Level"            value={riskLevel} />
-          <ReviewRow label={t.wizard.workTitle}    value={workDetails.title ?? '—'} />
-          <ReviewRow label={t.wizard.locationLabel} value={workDetails.location ?? '—'} />
+          <ReviewRow label={t.common.type}          value={cfg.label} />
+          <ReviewRow label="Risk Level"              value={risk.level} />
+          <ReviewRow label={t.wizard.workTitle}      value={workDetails.title ?? '—'} />
+          <ReviewRow label={t.wizard.locationLabel}  value={workDetails.location ?? '—'} />
           <ReviewRow label={t.wizard.equipmentLabel} value={workDetails.equipment ?? '—'} />
-          <ReviewRow label={t.wizard.validFrom}    value={workDetails.validFrom ?? '—'} />
-          <ReviewRow label={t.wizard.validTo}      value={workDetails.validTo ?? '—'} />
-          <ReviewRow label={t.wizard.workerCount}  value={String(workDetails.workerCount ?? 0)} />
+          <ReviewRow label={t.wizard.validFrom}      value={workDetails.validFrom ?? '—'} />
+          <ReviewRow label={t.wizard.validTo}        value={workDetails.validTo ?? '—'} />
+          <ReviewRow label={t.wizard.workerCount}    value={String(workDetails.workerCount ?? 0)} />
+          <ReviewRow label="JSA Completed"           value={risk.jsaCompleted ? '✓ Yes' : '✗ No'} />
+          <ReviewRow label="Toolbox Talk"            value={risk.toolboxTalk  ? '✓ Planned' : '✗ Not planned'} />
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -227,7 +245,7 @@ export function CreatePermitWizard() {
 
   const [permitType,   setPermitType]   = useState<PermitType | null>(null);
   const [workDetails,  setWorkDetails]  = useState<Partial<WorkDetails>>({});
-  const [riskLevel,    setRiskLevel]    = useState('MEDIUM');
+  const [risk,         setRisk]         = useState<RiskState>({ level: 'MEDIUM', jsaCompleted: false, toolboxTalk: false });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const steps = CREATE_PERMIT_STEPS;
@@ -255,7 +273,7 @@ export function CreatePermitWizard() {
     try {
       const permit = await permitService.createPermit({
         type:        permitType,
-        riskLevel:   riskLevel as 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL',
+        riskLevel:   risk.level as 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL',
         title:       workDetails.title       ?? '',
         description: workDetails.description ?? '',
         location:    workDetails.location    ?? '',
@@ -266,6 +284,8 @@ export function CreatePermitWizard() {
         validFrom:   workDetails.validFrom   ?? new Date().toISOString(),
         validTo:     workDetails.validTo     ?? new Date().toISOString(),
         workerCount: workDetails.workerCount ?? 1,
+        jsaCompleted:         risk.jsaCompleted,
+        toolboxTalkCompleted: risk.toolboxTalk,
       });
       closeWizard();
       showToast(`Permit ${permit.permitNumber} submitted for approval.`, 'success');
@@ -280,11 +300,11 @@ export function CreatePermitWizard() {
     switch (wizardStep) {
       case 0: return <StepTypeSelect selected={permitType} onChange={setPermitType} />;
       case 1: return <StepWorkDetails data={workDetails} onChange={setWorkDetails} />;
-      case 2: return <StepRiskAssessment riskLevel={riskLevel} onChange={setRiskLevel} />;
+      case 2: return <StepRiskAssessment risk={risk} onChange={setRisk} />;
       case 3: return <div className="text-xs text-gray-500 py-4">{t.wizard.isoPlaceholder}</div>;
       case 4: return <div className="text-xs text-gray-500 py-4">{t.wizard.gasPlaceholder}</div>;
       case 5: return <div className="text-xs text-gray-500 py-4">{t.wizard.crewPlaceholder}</div>;
-      case 6: return <StepReview type={permitType} workDetails={workDetails} riskLevel={riskLevel} />;
+      case 6: return <StepReview type={permitType} workDetails={workDetails} risk={risk} />;
       default: return null;
     }
   };

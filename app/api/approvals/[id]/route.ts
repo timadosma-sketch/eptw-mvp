@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/auth';
 import { getApprovalById, submitDecision } from '@/lib/dal/approvals.dal';
-import type { ApprovalDecision } from '@/lib/types';
+import { getPermitById, updatePermitStatus } from '@/lib/dal/permits.dal';
+import { sendPermitStatusEmail } from '@/lib/email';
+import type { ApprovalDecision, PermitStatus } from '@/lib/types';
 
 export async function GET(
   _req: NextRequest,
@@ -16,11 +19,19 @@ export async function GET(
   }
 }
 
+// Map approval decision → permit status transition
+const DECISION_TO_STATUS: Record<ApprovalDecision, PermitStatus> = {
+  APPROVED:      'APPROVED',
+  REJECTED:      'REJECTED',
+  REFERRED_BACK: 'DRAFT',    // Return to requester for revision
+};
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } },
 ) {
   try {
+    const session = await auth();
     const { decision, comments, conditions } = await req.json();
 
     if (!decision) {
@@ -33,6 +44,36 @@ export async function PATCH(
       comments ?? '',
       conditions ?? [],
     );
+
+    // Cascade to permit status
+    const newPermitStatus = DECISION_TO_STATUS[decision as ApprovalDecision];
+    if (newPermitStatus && updated.permitId) {
+      try {
+        await updatePermitStatus(updated.permitId, newPermitStatus);
+
+        // Fetch permit to get requester email for notification
+        const permit = await getPermitById(updated.permitId);
+        if (permit) {
+          const requesterEmail = (permit as unknown as { requestedBy?: { email?: string } }).requestedBy?.email;
+          if (requesterEmail) {
+            const performerName = (session?.user as Record<string, unknown> | undefined)?.name as string | undefined;
+            sendPermitStatusEmail({
+              to:           requesterEmail,
+              permitNumber: permit.permitNumber,
+              permitTitle:  permit.title,
+              status:       newPermitStatus,
+              location:     permit.location,
+              performedBy:  performerName ?? updated.assignedTo?.name ?? 'Approver',
+              notes:        comments ?? undefined,
+            }).catch(err => console.error('[email approval]', err));
+          }
+        }
+      } catch (cascadeErr) {
+        // Log but don't fail — decision is already recorded
+        console.error('[approvals cascade]', cascadeErr);
+      }
+    }
+
     return NextResponse.json(updated);
   } catch (err) {
     console.error('[PATCH /api/approvals/:id]', err);

@@ -14,6 +14,7 @@ import { Button } from '@/components/shared/Button';
 import { SectionHeader } from '@/components/shared/PageShell';
 import { useAppStore } from '@/lib/store/useAppStore';
 import { useT } from '@/lib/i18n/useT';
+import { rbac } from '@/lib/rbac';
 import { MOCK_DASHBOARD_METRICS } from '@/lib/mock/dashboard';
 import { MOCK_PERMITS } from '@/lib/mock/permits';
 import { MOCK_GAS_RECORDS } from '@/lib/mock/gas';
@@ -86,6 +87,7 @@ function usePermitColumns(onView: (id: string) => void, t: ReturnType<typeof use
 export function DashboardPage() {
   const openWizard       = useAppStore(s => s.openWizard);
   const openPermitDetail = useAppStore(s => s.openPermitDetail);
+  const currentUser      = useAppStore(s => s.currentUser);
   const { t } = useT();
 
   // Start with mock data so the UI renders immediately, then replace with DB data
@@ -152,9 +154,11 @@ export function DashboardPage() {
           <h1 className="text-lg font-bold text-white">{t.dashboard.title}</h1>
           <p className="text-xs text-gray-500 mt-0.5">{t.dashboard.subtitle}</p>
         </div>
-        <Button variant="primary" size="sm" icon={Plus} onClick={openWizard}>
-          {t.common.newPermit}
-        </Button>
+        {rbac.canCreatePermit(currentUser?.role) && (
+          <Button variant="primary" size="sm" icon={Plus} onClick={openWizard}>
+            {t.common.newPermit}
+          </Button>
+        )}
       </div>
 
       {/* Scrollable body */}

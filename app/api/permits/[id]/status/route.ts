@@ -7,7 +7,7 @@ import type { PermitStatus } from '@/lib/types';
 const VALID_TRANSITIONS: Partial<Record<PermitStatus, PermitStatus[]>> = {
   DRAFT:       ['SUBMITTED', 'CANCELLED'],
   SUBMITTED:   ['UNDER_REVIEW', 'CANCELLED'],
-  UNDER_REVIEW:['APPROVED', 'REJECTED'],
+  UNDER_REVIEW:['APPROVED', 'REJECTED', 'DRAFT'],  // DRAFT = referred back for revision
   APPROVED:    ['ACTIVE', 'CANCELLED'],
   ACTIVE:      ['SUSPENDED', 'CLOSED', 'CANCELLED'],
   SUSPENDED:   ['ACTIVE', 'CANCELLED', 'CLOSED'],
