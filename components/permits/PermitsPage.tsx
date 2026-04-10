@@ -9,6 +9,7 @@ import { Button } from '@/components/shared/Button';
 import { PermitDetailDrawer } from './PermitDetailDrawer';
 import { useAppStore } from '@/lib/store/useAppStore';
 import { useT } from '@/lib/i18n/useT';
+import { rbac } from '@/lib/rbac';
 import { MOCK_PERMITS } from '@/lib/mock/permits';
 import { PERMIT_TYPE_CONFIG, PERMIT_STATUS_CONFIG } from '@/lib/constants';
 import { formatDateTime, getTimeRemaining, truncate } from '@/lib/utils/formatters';
@@ -22,7 +23,10 @@ const STATUS_FILTERS: PermitStatus[] = [
 export function PermitsPage() {
   const openWizard       = useAppStore(s => s.openWizard);
   const openPermitDetail = useAppStore(s => s.openPermitDetail);
+  const currentUser      = useAppStore(s => s.currentUser);
   const { t } = useT();
+
+  const canCreate = rbac.canCreatePermit(currentUser?.role);
 
   const [search,   setSearch]   = useState('');
   const [statusF,  setStatusF]  = useState<PermitStatus | ''>('');
@@ -140,9 +144,11 @@ export function PermitsPage() {
         title={t.permits.title}
         subtitle={`${filtered.length} ${filtered.length !== 1 ? t.permits.subtitlePlural : t.permits.subtitle} — ${t.permits.allTime}`}
         actions={
-          <Button variant="primary" size="sm" icon={Plus} onClick={openWizard}>
-            {t.common.newPermit}
-          </Button>
+          canCreate ? (
+            <Button variant="primary" size="sm" icon={Plus} onClick={openWizard}>
+              {t.common.newPermit}
+            </Button>
+          ) : undefined
         }
       >
         {/* Filters */}

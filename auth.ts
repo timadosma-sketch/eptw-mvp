@@ -5,6 +5,7 @@ import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { db } from '@/lib/db';
+import { logAction } from '@/lib/dal/audit.dal';
 import { authConfig } from './auth.config';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -28,6 +29,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           user.password,
         );
         if (!valid) return null;
+
+        // Fire-and-forget audit log — never block the login on a logging failure
+        logAction({
+          action:      'USER_LOGIN',
+          entity:      'USER',
+          entityId:    user.id,
+          entityRef:   user.employeeId,
+          // Cast matches pattern in /api/audit route; DAL only reads .id
+          performedBy: { id: user.id } as Parameters<typeof logAction>[0]['performedBy'],
+          ipAddress:   '',
+          deviceInfo:  '',
+          changes:     [],
+          metadata:    { role: user.role, email: user.email },
+        }).catch(() => {});
 
         return {
           id:             user.id,
