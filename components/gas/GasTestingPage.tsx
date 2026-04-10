@@ -10,6 +10,8 @@ import { AlertStrip } from '@/components/shared/AlertStrip';
 import { Button } from '@/components/shared/Button';
 import { Modal } from '@/components/shared/Modal';
 import { useT } from '@/lib/i18n/useT';
+import { useAppStore } from '@/lib/store/useAppStore';
+import { rbac } from '@/lib/rbac';
 import { MOCK_GAS_RECORDS, MOCK_GAS_ALERTS } from '@/lib/mock/gas';
 import { GAS_THRESHOLDS } from '@/lib/constants';
 import { formatDateTime, formatRelative } from '@/lib/utils/formatters';
@@ -64,6 +66,7 @@ interface GasEntryModalProps {
 
 function GasEntryModal({ open, onClose, onSuccess }: GasEntryModalProps) {
   const { t } = useT();
+  const currentUser = useAppStore(s => s.currentUser);
   const [readings, setReadings] = useState<Record<GasType, string>>({
     O2: '', LEL: '', H2S: '', CO: '', VOC: '',
   });
@@ -104,7 +107,7 @@ function GasEntryModal({ open, onClose, onSuccess }: GasEntryModalProps) {
       const res = await fetch('/api/gas-tests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ permitId, permitNumber, testerId: 'usr-004', location: location.trim(), readings: filledReadings }),
+        body: JSON.stringify({ permitId, permitNumber, testerId: currentUser?.id ?? 'usr-004', location: location.trim(), readings: filledReadings }),
       });
       if (!res.ok) throw new Error('Failed');
       setReadings({ O2: '', LEL: '', H2S: '', CO: '', VOC: '' });
@@ -200,6 +203,8 @@ function GasEntryModal({ open, onClose, onSuccess }: GasEntryModalProps) {
 
 export function GasTestingPage() {
   const { t } = useT();
+  const currentUser = useAppStore(s => s.currentUser);
+  const canTest     = rbac.canRecordGasTest(currentUser?.role);
   const [entryModalOpen, setEntryModalOpen] = useState(false);
   const [gasRecords, setGasRecords] = useState(MOCK_GAS_RECORDS);
   const [gasAlerts, setGasAlerts] = useState(MOCK_GAS_ALERTS);
@@ -293,9 +298,11 @@ export function GasTestingPage() {
         title={t.gas.title}
         subtitle={t.gas.subtitle}
         actions={
-          <Button variant="primary" size="sm" icon={Plus} onClick={() => setEntryModalOpen(true)}>
-            {t.gas.recordTest}
-          </Button>
+          canTest ? (
+            <Button variant="primary" size="sm" icon={Plus} onClick={() => setEntryModalOpen(true)}>
+              {t.gas.recordTest}
+            </Button>
+          ) : undefined
         }
       >
         <div className="space-y-6">

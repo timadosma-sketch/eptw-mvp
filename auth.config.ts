@@ -21,6 +21,12 @@ export const authConfig: NextAuthConfig = {
       // Login page: always accessible
       if (pathname === '/login')            return true;
 
+      // Admin section requires PLANT_OPS_MANAGER or SYSTEM_ADMIN
+      if (pathname.startsWith('/admin')) {
+        const role = (auth?.user as Record<string, unknown> | undefined)?.role as string | undefined;
+        return role === 'PLANT_OPS_MANAGER' || role === 'SYSTEM_ADMIN';
+      }
+
       // Everything else requires a session
       return isLoggedIn;
     },

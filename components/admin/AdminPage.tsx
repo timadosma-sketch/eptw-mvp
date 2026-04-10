@@ -1,10 +1,12 @@
 'use client';
 
-import { Settings, Users, Bell, Shield } from 'lucide-react';
+import { Settings, Users, Bell, Shield, Lock } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { PageShell } from '@/components/shared/PageShell';
 import { Button } from '@/components/shared/Button';
 import { useT } from '@/lib/i18n/useT';
+import { useAppStore } from '@/lib/store/useAppStore';
+import { rbac } from '@/lib/rbac';
 import { MOCK_USERS } from '@/lib/mock/users';
 import { ROLE_CONFIG } from '@/lib/constants';
 import { cn } from '@/lib/utils/cn';
@@ -128,8 +130,28 @@ function AlertRulesTab() {
 
 export function AdminPage() {
   const { t } = useT();
+  const currentUser = useAppStore(s => s.currentUser);
   const [tab, setTab] = useState<AdminTab>('users');
   const [users, setUsers] = useState(MOCK_USERS);
+
+  if (!rbac.canAccessAdmin(currentUser?.role)) {
+    return (
+      <PageShell title={t.admin.title} subtitle={t.admin.subtitle}>
+        <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
+          <div className="w-14 h-14 rounded-xl bg-red-900/30 border border-red-800/50 flex items-center justify-center">
+            <Lock className="w-7 h-7 text-red-400" />
+          </div>
+          <div>
+            <div className="text-sm font-semibold text-gray-200 mb-1">Access Restricted</div>
+            <div className="text-xs text-gray-500 max-w-xs">
+              The Admin panel is only accessible to Plant Operations Managers and System Administrators.
+              Your current role ({currentUser?.role?.replace(/_/g, ' ')}) does not have this permission.
+            </div>
+          </div>
+        </div>
+      </PageShell>
+    );
+  }
 
   useEffect(() => {
     fetch('/api/users')

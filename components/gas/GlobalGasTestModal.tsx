@@ -14,6 +14,7 @@ export function GlobalGasTestModal() {
   const permitId        = useAppStore(s => s.gasTestModalPermitId);
   const closeModal      = useAppStore(s => s.closeGasTestModal);
   const showToast       = useAppStore(s => s.showToast);
+  const currentUser     = useAppStore(s => s.currentUser);
 
   const [permitNumber, setPermitNumber] = useState('');
   const [location,     setLocation]     = useState('');
@@ -59,7 +60,7 @@ export function GlobalGasTestModal() {
         body: JSON.stringify({
           permitId,
           permitNumber,
-          testerId: 'usr-004',
+          testerId: currentUser?.id ?? 'usr-004',
           location: location.trim(),
           readings: filledReadings,
         }),
