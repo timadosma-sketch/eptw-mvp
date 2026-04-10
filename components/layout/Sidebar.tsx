@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
@@ -71,17 +72,48 @@ function SidebarItem({ item, collapsed, label, pendingCount, hasAlert }: Sidebar
   );
 }
 
+interface DashboardCounts {
+  activePermits:    number;
+  pendingApprovals: number;
+  gasAlerts:        number;
+  simoConflicts:    number;
+}
+
 export function Sidebar() {
   const collapsed      = useAppStore(s => s.sidebarCollapsed);
   const toggleSidebar  = useAppStore(s => s.toggleSidebar);
-  const alerts         = useAppStore(s => s.alerts);
   const currentUser    = useAppStore(s => s.currentUser);
   const { t }          = useT();
 
-  const pendingApprovals = 5;
-  const activePermits    = 3;
-  const gasAlerts        = alerts.filter(a => !a.acknowledged && a.severity === 'CRITICAL').length;
-  const simoConflicts    = 1;
+  const [counts, setCounts] = useState<DashboardCounts>({
+    activePermits:    0,
+    pendingApprovals: 0,
+    gasAlerts:        0,
+    simoConflicts:    0,
+  });
+
+  useEffect(() => {
+    const fetchCounts = () => {
+      fetch('/api/dashboard')
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (!d?.metrics) return;
+          const m = d.metrics;
+          setCounts({
+            activePermits:    m.activePermits    ?? 0,
+            pendingApprovals: m.pendingApprovals ?? 0,
+            gasAlerts:        m.gasAlerts        ?? 0,
+            simoConflicts:    m.simoConflicts    ?? 0,
+          });
+        })
+        .catch(() => {});
+    };
+    fetchCounts();
+    const interval = setInterval(fetchCounts, 60_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const { activePermits, pendingApprovals, gasAlerts, simoConflicts } = counts;
 
   const getBadge = (item: NavItem): { count?: number; alert?: boolean } => {
     if (item.id === 'permits')   return { count: activePermits };

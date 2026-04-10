@@ -9,6 +9,7 @@ import { Button } from '@/components/shared/Button';
 import { Modal } from '@/components/shared/Modal';
 import { useAppStore } from '@/lib/store/useAppStore';
 import { useT } from '@/lib/i18n/useT';
+import { rbac } from '@/lib/rbac';
 import { MOCK_APPROVALS } from '@/lib/mock/approvals';
 import { approvalService } from '@/lib/services/approvalService';
 import { PERMIT_TYPE_CONFIG, ROLE_CONFIG } from '@/lib/constants';
@@ -150,8 +151,11 @@ function DecisionModal({ approval, onClose, onDecide }: DecisionModalProps) {
 }
 
 export function ApprovalsPage() {
-  const showToast = useAppStore(s => s.showToast);
+  const showToast   = useAppStore(s => s.showToast);
+  const currentUser = useAppStore(s => s.currentUser);
   const { t } = useT();
+
+  const canApprove = rbac.canApprove(currentUser?.role);
   const [activeApproval, setActiveApproval] = useState<Approval | null>(null);
   const [pending,  setPending]  = useState<Approval[]>(MOCK_APPROVALS.filter(a => !a.decision));
   const [history,  setHistory]  = useState<Approval[]>(MOCK_APPROVALS.filter(a =>  a.decision));
@@ -241,10 +245,12 @@ export function ApprovalsPage() {
       header: '',
       width: '100px',
       align: 'right',
-      render: a => (
+      render: a => canApprove ? (
         <Button variant="primary" size="xs" onClick={e => { e.stopPropagation(); setActiveApproval(a); }}>
           {t.common.review}
         </Button>
+      ) : (
+        <span className="text-2xs text-gray-600 italic">View only</span>
       ),
     },
   ];
@@ -296,6 +302,12 @@ export function ApprovalsPage() {
         title={t.approvals.title}
         subtitle={`${pending.length} ${t.approvals.pending.toLowerCase()} · ${history.length} decided`}
       >
+        {!canApprove && (
+          <div className="flex items-center gap-2 mb-4 px-3 py-2.5 rounded border border-yellow-700/50 bg-yellow-900/20 text-xs text-yellow-400">
+            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+            Your role ({currentUser?.role?.replace(/_/g, ' ')}) has read-only access to this queue. Approvals require Area Authority, Issuing Authority, Plant Ops Manager, or System Admin.
+          </div>
+        )}
         <div className="flex items-center gap-0 mb-5 border-b border-surface-border">
           {[
             { id: 'pending', label: `${t.approvals.pending} (${pending.length})` },

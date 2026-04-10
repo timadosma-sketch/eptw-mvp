@@ -13,6 +13,7 @@ import { PERMIT_TYPE_CONFIG } from '@/lib/constants';
 import { formatDateTime, getTimeRemaining } from '@/lib/utils/formatters';
 import { cn } from '@/lib/utils/cn';
 import { downloadPermitPDF } from './PermitPDF';
+import { rbac } from '@/lib/rbac';
 import type { Permit, IsolationCertificate, GasTestRecord } from '@/lib/types';
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -41,7 +42,12 @@ export function PermitDetailDrawer() {
   const closePermitDetail = useAppStore(s => s.closePermitDetail);
   const openGasTestModal  = useAppStore(s => s.openGasTestModal);
   const showToast         = useAppStore(s => s.showToast);
+  const currentUser       = useAppStore(s => s.currentUser);
   const { t } = useT();
+
+  const canSubmit  = rbac.canCreatePermit(currentUser?.role);
+  const canControl = rbac.canControlPermit(currentUser?.role);
+  const canGasTest = rbac.canRecordGasTest(currentUser?.role);
 
   const [permit,    setPermit]    = useState<Permit | null>(null);
   const [isolation, setIsolation] = useState<IsolationCertificate | null>(null);
@@ -248,22 +254,22 @@ export function PermitDetailDrawer() {
 
         {['DRAFT', 'ACTIVE', 'APPROVED'].includes(permit.status) && (
           <div className="flex items-center gap-2 pt-2 border-t border-surface-border">
-            {permit.status === 'DRAFT' && (
+            {permit.status === 'DRAFT' && canSubmit && (
               <Button variant="primary" size="sm" icon={Send} loading={acting} onClick={() => changeStatus('SUBMITTED', `Permit ${permit.permitNumber} submitted for approval.`)}>
                 Submit for Approval
               </Button>
             )}
-            {permit.gasTestRequired && permit.status !== 'DRAFT' && (
+            {permit.gasTestRequired && permit.status !== 'DRAFT' && canGasTest && (
               <Button variant="secondary" size="sm" icon={Wind} onClick={() => openGasTestModal(permit.id)}>
                 {t.permitDetail.gasTest}
               </Button>
             )}
-            {permit.status === 'ACTIVE' && (
+            {permit.status === 'ACTIVE' && canControl && (
               <Button variant="warning" size="sm" icon={AlertTriangle} loading={acting} onClick={handleSuspend}>
                 {t.permitDetail.suspend}
               </Button>
             )}
-            {permit.status === 'ACTIVE' && (
+            {permit.status === 'ACTIVE' && canControl && (
               <Button variant="success" size="sm" icon={CheckCircle2} loading={acting} onClick={handleClose}>
                 {t.permitDetail.closePermit}
               </Button>
