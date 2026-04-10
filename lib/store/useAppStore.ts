@@ -11,6 +11,7 @@ import type { Locale } from '@/lib/i18n/useT';
 interface AppState {
   // Current user (mock — later replaced by auth session)
   currentUser: User;
+  setCurrentUser: (user: User) => void;
 
   // Locale / language
   locale: Locale;
@@ -67,6 +68,7 @@ interface AppState {
 
 export const useAppStore = create<AppState>((set) => ({
   currentUser: MOCK_USERS[0],
+  setCurrentUser: (user) => set({ currentUser: user }),
 
   locale: 'en',
   setLocale: (locale) => set({ locale }),

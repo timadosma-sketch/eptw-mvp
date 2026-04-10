@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import {
   LayoutDashboard, FileText, CheckSquare, Wind, Lock,
   GitMerge, RefreshCw, ShieldCheck, BarChart2,
@@ -13,6 +14,7 @@ import { useAppStore } from '@/lib/store/useAppStore';
 import { useT } from '@/lib/i18n/useT';
 import { NAV_ITEMS } from '@/lib/constants';
 import type { NavItem } from '@/lib/constants';
+import type { User } from '@/lib/types';
 
 const ICON_MAP: Record<string, React.ElementType> = {
   LayoutDashboard, FileText, CheckSquare, Wind, Lock,
@@ -71,10 +73,21 @@ function SidebarItem({ item, collapsed, label, pendingCount, hasAlert }: Sidebar
 }
 
 export function Sidebar() {
-  const collapsed     = useAppStore(s => s.sidebarCollapsed);
-  const toggleSidebar = useAppStore(s => s.toggleSidebar);
-  const alerts        = useAppStore(s => s.alerts);
-  const { t }         = useT();
+  const collapsed      = useAppStore(s => s.sidebarCollapsed);
+  const toggleSidebar  = useAppStore(s => s.toggleSidebar);
+  const alerts         = useAppStore(s => s.alerts);
+  const currentUser    = useAppStore(s => s.currentUser);
+  const setCurrentUser = useAppStore(s => s.setCurrentUser);
+  const { t }          = useT();
+
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    fetch('/api/users')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (Array.isArray(d)) setAllUsers(d); else if (d?.data) setAllUsers(d.data); })
+      .catch(() => {});
+  }, []);
 
   const pendingApprovals = 5;
   const activePermits    = 3;
@@ -148,6 +161,25 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      {/* User switcher */}
+      {!collapsed && allUsers.length > 0 && (
+        <div className="px-3 py-2 border-t border-surface-border">
+          <div className="text-2xs text-gray-600 mb-1">Switch User</div>
+          <select
+            value={currentUser.id}
+            onChange={e => {
+              const user = allUsers.find(u => u.id === e.target.value);
+              if (user) setCurrentUser(user);
+            }}
+            className="w-full text-2xs bg-surface-panel border border-surface-border rounded px-2 py-1.5 text-gray-300 focus:outline-none focus:border-brand/60"
+          >
+            {allUsers.map(u => (
+              <option key={u.id} value={u.id}>{u.name} — {u.role.replace(/_/g, ' ')}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Collapse toggle */}
       <div className="px-2 pb-4 pt-2 border-t border-surface-border">

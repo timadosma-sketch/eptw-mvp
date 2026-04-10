@@ -44,6 +44,9 @@ export function HandoverPage() {
   const [permits,   setPermits]   = useState(MOCK_PERMITS.filter(p => !['ARCHIVED','DRAFT'].includes(p.status)));
   const [gasAlerts, setGasAlerts] = useState(MOCK_GAS_ALERTS.filter(a => !a.acknowledged));
   const [conflicts, setConflicts] = useState(MOCK_SIMOPS_CONFLICTS.filter(c => c.isActive));
+  const [notes, setNotes] = useState('HCU line break permit suspended — LEL source investigation ongoing. Do not reinstate without HSE clearance.');
+  const [signingOff, setSigningOff] = useState(false);
+  const [signedOff, setSignedOff] = useState(false);
 
   useEffect(() => {
     fetch('/api/permits?pageSize=100')
@@ -65,8 +68,35 @@ export function HandoverPage() {
   const gasAlertsCount  = gasAlerts.length;
   const conflictCount   = conflicts.length;
 
-  const handleCompleteHandover = () => {
-    showToast('Shift handover completed and signed off. Incoming supervisor notified.', 'success');
+  const handleCompleteHandover = async () => {
+    setSigningOff(true);
+    try {
+      await fetch('/api/audit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'SHIFT_HANDOVER',
+          entity: 'SYSTEM',
+          entityId: 'system',
+          entityRef: 'SHIFT-HANDOVER',
+          performedById: currentUser.id,
+          metadata: {
+            outgoingSupervisor: currentUser.name,
+            incomingSupervisor: 'Aliya Nurmagambetova',
+            activePermits,
+            suspendedPermits: suspendedCount,
+            gasAlerts: gasAlertsCount,
+            notes,
+          },
+        }),
+      });
+      setSignedOff(true);
+      showToast('Shift handover completed and signed off. Incoming supervisor notified.', 'success');
+    } catch {
+      showToast('Failed to complete handover. Please try again.', 'error');
+    } finally {
+      setSigningOff(false);
+    }
   };
 
   return (
@@ -74,8 +104,8 @@ export function HandoverPage() {
       title={t.handover.title}
       subtitle={t.handover.subtitle}
       actions={
-        <Button variant="primary" size="sm" icon={CheckCircle2} onClick={handleCompleteHandover}>
-          {t.handover.completeHandover}
+        <Button variant="primary" size="sm" icon={CheckCircle2} onClick={handleCompleteHandover} loading={signingOff} disabled={signedOff}>
+          {signedOff ? 'Signed Off ✓' : t.handover.completeHandover}
         </Button>
       }
     >
@@ -118,7 +148,8 @@ export function HandoverPage() {
                   rows={3}
                   placeholder={t.handover.notesPlaceholder}
                   className="w-full text-xs bg-surface-panel border border-surface-border rounded px-3 py-2 text-gray-200 placeholder-gray-600 focus:outline-none focus:border-brand/60 resize-none"
-                  defaultValue="HCU line break permit suspended — LEL source investigation ongoing. Do not reinstate without HSE clearance."
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
                 />
               </div>
 

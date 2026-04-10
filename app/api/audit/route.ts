@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuditLog } from '@/lib/dal/audit.dal';
+import type { AuditEntry } from '@/lib/types';
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,5 +14,27 @@ export async function GET(req: NextRequest) {
   } catch (err) {
     console.error('[GET /api/audit]', err);
     return NextResponse.json({ error: 'Failed to fetch audit log' }, { status: 500 });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { logAction } = await import('@/lib/dal/audit.dal');
+    const entry = await logAction({
+      action:       body.action ?? 'SYSTEM_EVENT',
+      entity:       body.entity ?? 'SYSTEM',
+      entityId:     body.entityId ?? 'system',
+      entityRef:    body.entityRef ?? '',
+      performedBy:  { id: body.performedById ?? 'usr-001' } as AuditEntry['performedBy'],
+      ipAddress:    body.ipAddress ?? '',
+      deviceInfo:   body.deviceInfo ?? '',
+      changes:      body.changes ?? [],
+      metadata:     body.metadata ?? {},
+    });
+    return NextResponse.json(entry, { status: 201 });
+  } catch (err) {
+    console.error('[POST /api/audit]', err);
+    return NextResponse.json({ error: 'Failed to log audit entry' }, { status: 500 });
   }
 }

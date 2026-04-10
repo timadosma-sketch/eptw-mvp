@@ -94,15 +94,23 @@ export function DashboardPage() {
   const [gasRecords, setGasRecords] = useState<GasTestRecord[]>(MOCK_GAS_RECORDS);
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/dashboard').then(r => r.ok ? r.json() : null),
-      fetch('/api/permits?pageSize=50').then(r => r.ok ? r.json() : null),
-      fetch('/api/gas-tests').then(r => r.ok ? r.json() : null),
-    ]).then(([dash, permits, gas]) => {
-      if (dash?.metrics)   setM(dash.metrics);
-      if (permits?.data)   setAllPermits(permits.data);
-      if (gas?.data)       setGasRecords(gas.data);
-    }).catch(() => { /* silently keep mock data */ });
+    const load = () => {
+      fetch('/api/dashboard')
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d?.metrics) setM(d.metrics); })
+        .catch(() => {});
+      fetch('/api/permits?pageSize=50')
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d?.data) setAllPermits(d.data); })
+        .catch(() => {});
+      fetch('/api/gas-tests')
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d?.data) setGasRecords(d.data); })
+        .catch(() => {});
+    };
+    load();
+    const interval = setInterval(load, 30_000);
+    return () => clearInterval(interval);
   }, []);
 
   const activePermits = allPermits.filter(p => ['ACTIVE', 'APPROVED', 'UNDER_REVIEW'].includes(p.status));
