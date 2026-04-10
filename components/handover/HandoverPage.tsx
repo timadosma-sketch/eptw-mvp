@@ -75,7 +75,7 @@ export function HandoverPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'SHIFT_HANDOVER',
+          action: 'SHIFT_HANDOVER_COMPLETED',
           entity: 'SYSTEM',
           entityId: 'system',
           entityRef: 'SHIFT-HANDOVER',

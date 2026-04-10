@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { logAction } = await import('@/lib/dal/audit.dal');
     const entry = await logAction({
-      action:       body.action ?? 'SYSTEM_EVENT',
+      action:       body.action ?? 'SYSTEM_ALERT',
       entity:       body.entity ?? 'SYSTEM',
       entityId:     body.entityId ?? 'system',
       entityRef:    body.entityRef ?? '',
