@@ -19,7 +19,7 @@ import type { Approval, ApprovalDecision } from '@/lib/types';
 interface DecisionModalProps {
   approval: Approval | null;
   onClose: () => void;
-  onDecide: (id: string, decision: ApprovalDecision, comments: string, conditions: string[]) => void;
+  onDecide: (id: string, decision: ApprovalDecision, comments: string, conditions: string[]) => Promise<void>;
 }
 
 function DecisionModal({ approval, onClose, onDecide }: DecisionModalProps) {
@@ -41,9 +41,8 @@ function DecisionModal({ approval, onClose, onDecide }: DecisionModalProps) {
 
   const handleSubmit = async () => {
     setLoading(true);
-    await new Promise(r => setTimeout(r, 500));
+    await onDecide(approval.id, decision, comments, conditions);
     setLoading(false);
-    onDecide(approval.id, decision, comments, conditions);
     onClose();
   };
 

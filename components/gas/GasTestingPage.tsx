@@ -59,23 +59,63 @@ function GasGauge({ gasType, value }: GasGaugeProps) {
 interface GasEntryModalProps {
   open: boolean;
   onClose: () => void;
+  onSuccess: () => void;
 }
 
-function GasEntryModal({ open, onClose }: GasEntryModalProps) {
+function GasEntryModal({ open, onClose, onSuccess }: GasEntryModalProps) {
   const { t } = useT();
   const [readings, setReadings] = useState<Record<GasType, string>>({
     O2: '', LEL: '', H2S: '', CO: '', VOC: '',
   });
-  const [location, setLocation] = useState('');
-  const [loading,  setLoading]  = useState(false);
+  const [location,     setLocation]     = useState('');
+  const [permitId,     setPermitId]     = useState('');
+  const [permitNumber, setPermitNumber] = useState('');
+  const [permits,      setPermits]      = useState<{ id: string; permitNumber: string; title: string }[]>([]);
+  const [loading,      setLoading]      = useState(false);
+  const [error,        setError]        = useState('');
 
   const inputCls = "w-full text-xs bg-surface-panel border border-surface-border rounded px-3 py-2 text-gray-200 placeholder-gray-600 focus:outline-none focus:border-brand/60";
 
+  useEffect(() => {
+    if (!open) return;
+    fetch('/api/permits?status=ACTIVE,APPROVED&pageSize=50')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.data) setPermits(d.data.map((p: any) => ({ id: p.id, permitNumber: p.permitNumber, title: p.title }))); })
+      .catch(() => {});
+  }, [open]);
+
   const handleSubmit = async () => {
+    if (!permitId) { setError('Please select a permit.'); return; }
+    if (!location.trim()) { setError('Location is required.'); return; }
+    const filledReadings = (Object.entries(readings) as [GasType, string][])
+      .filter(([, v]) => v !== '')
+      .map(([gasType, v]) => ({
+        gasType,
+        value:    parseFloat(v),
+        unit:     gasType === 'O2' ? '%' : gasType === 'LEL' ? '%LEL' : 'ppm',
+        location: location.trim(),
+        instrument: 'Multi-Gas Detector',
+        instrumentCalibrationDate: new Date().toISOString(),
+      }));
+    if (filledReadings.length === 0) { setError('Enter at least one reading.'); return; }
+    setError('');
     setLoading(true);
-    await new Promise(r => setTimeout(r, 600));
-    setLoading(false);
-    onClose();
+    try {
+      const res = await fetch('/api/gas-tests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ permitId, permitNumber, testerId: 'usr-004', location: location.trim(), readings: filledReadings }),
+      });
+      if (!res.ok) throw new Error('Failed');
+      setReadings({ O2: '', LEL: '', H2S: '', CO: '', VOC: '' });
+      setLocation(''); setPermitId(''); setPermitNumber('');
+      onSuccess();
+      onClose();
+    } catch {
+      setError('Failed to submit gas test. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -93,6 +133,24 @@ function GasEntryModal({ open, onClose }: GasEntryModalProps) {
       }
     >
       <div className="space-y-4">
+        {error && <div className="text-xs text-red-400 bg-red-950/30 border border-red-800 rounded px-3 py-2">{error}</div>}
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">Permit *</label>
+          <select
+            value={permitId}
+            onChange={e => {
+              const p = permits.find(x => x.id === e.target.value);
+              setPermitId(e.target.value);
+              setPermitNumber(p?.permitNumber ?? '');
+            }}
+            className={inputCls}
+          >
+            <option value="">— Select active permit —</option>
+            {permits.map(p => (
+              <option key={p.id} value={p.id}>{p.permitNumber} — {p.title}</option>
+            ))}
+          </select>
+        </div>
         <div>
           <label className="text-xs text-gray-500 mb-1 block">{t.gas.testLocation} *</label>
           <input value={location} onChange={e => setLocation(e.target.value)} placeholder={t.gas.testLocationPlaceholder} className={inputCls} />
@@ -146,7 +204,7 @@ export function GasTestingPage() {
   const [gasRecords, setGasRecords] = useState(MOCK_GAS_RECORDS);
   const [gasAlerts, setGasAlerts] = useState(MOCK_GAS_ALERTS);
 
-  useEffect(() => {
+  const loadGasData = () => {
     fetch('/api/gas-tests')
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d?.data?.length) setGasRecords(d.data); })
@@ -155,7 +213,9 @@ export function GasTestingPage() {
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d?.data?.length) setGasAlerts(d.data); })
       .catch(() => {});
-  }, []);
+  };
+
+  useEffect(() => { loadGasData(); }, []);
 
   const activeAlerts = gasAlerts.filter(a => !a.acknowledged);
   const safeCount    = gasRecords.filter(r => r.overallStatus === 'SAFE').length;
@@ -274,7 +334,7 @@ export function GasTestingPage() {
         </div>
       </PageShell>
 
-      <GasEntryModal open={entryModalOpen} onClose={() => setEntryModalOpen(false)} />
+      <GasEntryModal open={entryModalOpen} onClose={() => setEntryModalOpen(false)} onSuccess={loadGasData} />
     </>
   );
 }
