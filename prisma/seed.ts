@@ -6,8 +6,12 @@
 // ──────────────────────────────────────────────────────────────
 
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const db = new PrismaClient();
+
+// All demo users share this password
+const DEMO_PASSWORD_HASH = bcrypt.hashSync('eptw2026', 10);
 
 async function main() {
   console.log('🌱 Seeding ePTW database...');
@@ -33,6 +37,7 @@ async function main() {
     role: 'ISSUING_AUTHORITY', department: 'Operations', company: 'Al-Noor Refinery',
     email: 'a.seitkali@alnoor.kz', phone: '+7 701 234 5678',
     certifications: ['PTW-IA','BOSIET','H2S-CA'], isContractor: false, avatarInitials: 'AS',
+    password: DEMO_PASSWORD_HASH,
   }});
 
   const dinara = await db.user.create({ data: {
@@ -40,6 +45,7 @@ async function main() {
     role: 'AREA_AUTHORITY', department: 'Maintenance', company: 'Al-Noor Refinery',
     email: 'd.bekova@alnoor.kz', phone: '+7 702 345 6789',
     certifications: ['PTW-AA','BOSIET'], isContractor: false, avatarInitials: 'DB',
+    password: DEMO_PASSWORD_HASH,
   }});
 
   const yerzhan = await db.user.create({ data: {
@@ -47,6 +53,7 @@ async function main() {
     role: 'HSE_OFFICER', department: 'HSSE', company: 'Al-Noor Refinery',
     email: 'y.akhmetov@alnoor.kz', phone: '+7 707 456 7890',
     certifications: ['NEBOSH-IGC','IOSH','PTW-HSE','H2S-CA'], isContractor: false, avatarInitials: 'YA',
+    password: DEMO_PASSWORD_HASH,
   }});
 
   const sergei = await db.user.create({ data: {
@@ -54,6 +61,7 @@ async function main() {
     role: 'GAS_TESTER', department: 'HSSE', company: 'Al-Noor Refinery',
     email: 's.volkov@alnoor.kz', phone: '+7 705 567 8901',
     certifications: ['GAS-TESTER-L2','H2S-CA','BOSIET'], isContractor: false, avatarInitials: 'SV',
+    password: DEMO_PASSWORD_HASH,
   }});
 
   const john = await db.user.create({ data: {
@@ -61,6 +69,7 @@ async function main() {
     role: 'PERMIT_REQUESTER', department: 'Turnaround', company: 'Petrofac Services Ltd',
     email: 'j.mcallister@petrofac.com', phone: '+7 712 678 9012',
     certifications: ['BOSIET','H2S-CA'], isContractor: true, avatarInitials: 'JM',
+    password: DEMO_PASSWORD_HASH,
   }});
 
   const aliya = await db.user.create({ data: {
@@ -68,6 +77,7 @@ async function main() {
     role: 'SITE_SUPERVISOR', department: 'Operations', company: 'Al-Noor Refinery',
     email: 'a.nurmagambetova@alnoor.kz', phone: '+7 708 789 0123',
     certifications: ['PTW-SS','BOSIET','H2S-CA'], isContractor: false, avatarInitials: 'AN',
+    password: DEMO_PASSWORD_HASH,
   }});
 
   const ruslan = await db.user.create({ data: {
@@ -75,6 +85,7 @@ async function main() {
     role: 'ISOLATION_AUTHORITY', department: 'Electrical', company: 'Al-Noor Refinery',
     email: 'r.dzhaksybekov@alnoor.kz', phone: '+7 701 890 1234',
     certifications: ['ISO-AUTH','HV-COMPETENT','PTW-IA'], isContractor: false, avatarInitials: 'RD',
+    password: DEMO_PASSWORD_HASH,
   }});
 
   const natalya = await db.user.create({ data: {
@@ -82,6 +93,7 @@ async function main() {
     role: 'PLANT_OPS_MANAGER', department: 'Operations Management', company: 'Al-Noor Refinery',
     email: 'n.petrova@alnoor.kz', phone: '+7 702 901 2345',
     certifications: ['PTW-POM','NEBOSH-PSM'], isContractor: false, avatarInitials: 'NP',
+    password: DEMO_PASSWORD_HASH,
   }});
 
   console.log('✓ Users created');

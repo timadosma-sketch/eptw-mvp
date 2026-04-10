@@ -3,6 +3,7 @@ import './globals.css';
 import { AppShell } from '@/components/layout/AppShell';
 import { CreatePermitWizard } from '@/components/permits/CreatePermitWizard';
 import { GlobalGasTestModal } from '@/components/gas/GlobalGasTestModal';
+import { AuthProvider } from '@/components/auth/AuthProvider';
 
 export const metadata: Metadata = {
   title: 'ePTW Platform — Enterprise Permit to Work',
@@ -16,12 +17,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="dark">
       <body>
-        <AppShell>
-          {children}
-          {/* Global overlays */}
-          <CreatePermitWizard />
-          <GlobalGasTestModal />
-        </AppShell>
+        <AuthProvider>
+          <AppShell>
+            {children}
+            {/* Global overlays */}
+            <CreatePermitWizard />
+            <GlobalGasTestModal />
+          </AppShell>
+        </AuthProvider>
       </body>
     </html>
   );
