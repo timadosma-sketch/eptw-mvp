@@ -215,7 +215,12 @@ export function GasTestingPage() {
       .catch(() => {});
   };
 
-  useEffect(() => { loadGasData(); }, []);
+  useEffect(() => {
+    const load = () => { loadGasData(); };
+    load();
+    const interval = setInterval(load, 30_000);
+    return () => clearInterval(interval);
+  }, []);
 
   const activeAlerts = gasAlerts.filter(a => !a.acknowledged);
   const safeCount    = gasRecords.filter(r => r.overallStatus === 'SAFE').length;

@@ -52,3 +52,4 @@ coverage/
 
 # Debug
 .pnpm-debug.log*
+.env*.local

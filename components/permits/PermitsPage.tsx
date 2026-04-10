@@ -30,10 +30,15 @@ export function PermitsPage() {
   const [permits,  setPermits]  = useState<Permit[]>(MOCK_PERMITS);
 
   useEffect(() => {
-    fetch('/api/permits?pageSize=100')
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.data?.length) setPermits(d.data); })
-      .catch(() => {});
+    const load = () => {
+      fetch('/api/permits?pageSize=100')
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d?.data?.length) setPermits(d.data); })
+        .catch(() => {});
+    };
+    load();
+    const interval = setInterval(load, 30_000);
+    return () => clearInterval(interval);
   }, []);
 
   const filtered = useMemo(() => {

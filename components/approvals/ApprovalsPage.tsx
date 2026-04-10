@@ -168,7 +168,12 @@ export function ApprovalsPage() {
       .catch(() => {});
   };
 
-  useEffect(() => { loadApprovals(); }, []);
+  useEffect(() => {
+    const load = () => { loadApprovals(); };
+    load();
+    const interval = setInterval(load, 30_000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleDecide = async (id: string, decision: ApprovalDecision, comments: string, conditions: string[]) => {
     try {

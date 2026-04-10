@@ -33,10 +33,15 @@ export function SimopsPage() {
   const [conflicts, setConflicts] = useState(MOCK_SIMOPS_CONFLICTS);
 
   useEffect(() => {
-    fetch('/api/simops')
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.data?.length) setConflicts(d.data); })
-      .catch(() => {});
+    const load = () => {
+      fetch('/api/simops')
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d?.data?.length) setConflicts(d.data); })
+        .catch(() => {});
+    };
+    load();
+    const interval = setInterval(load, 30_000);
+    return () => clearInterval(interval);
   }, []);
 
   const activeConflicts   = conflicts.filter(c => c.isActive);

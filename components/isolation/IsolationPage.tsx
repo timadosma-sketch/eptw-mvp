@@ -76,10 +76,15 @@ export function IsolationPage() {
   const [certs, setCerts] = useState(MOCK_ISOLATION_CERTS);
 
   useEffect(() => {
-    fetch('/api/isolation?active=true')
-      .then(r => r.ok ? r.json() : null)
-      .then(json => { if (json?.data?.length) setCerts(json.data); })
-      .catch(() => { /* keep mock */ });
+    const load = () => {
+      fetch('/api/isolation?active=true')
+        .then(r => r.ok ? r.json() : null)
+        .then(json => { if (json?.data?.length) setCerts(json.data); })
+        .catch(() => { /* keep mock */ });
+    };
+    load();
+    const interval = setInterval(load, 30_000);
+    return () => clearInterval(interval);
   }, []);
 
   const activeCount   = certs.filter(c => ['ISOLATED', 'VERIFIED'].includes(c.status)).length;
