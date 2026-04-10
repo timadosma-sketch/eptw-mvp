@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import {
-  MapPin, Wind, AlertTriangle, CheckCircle2, XCircle, Paperclip, Send,
+  MapPin, Wind, AlertTriangle, CheckCircle2, XCircle, Paperclip, Send, Download,
 } from 'lucide-react';
 import { Drawer } from '@/components/shared/Modal';
 import { PermitStatusBadge, RiskBadge, GasStatusBadge } from '@/components/shared/StatusBadge';
@@ -12,6 +12,7 @@ import { useT } from '@/lib/i18n/useT';
 import { PERMIT_TYPE_CONFIG } from '@/lib/constants';
 import { formatDateTime, getTimeRemaining } from '@/lib/utils/formatters';
 import { cn } from '@/lib/utils/cn';
+import { downloadPermitPDF } from './PermitPDF';
 import type { Permit, IsolationCertificate, GasTestRecord } from '@/lib/types';
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -46,6 +47,7 @@ export function PermitDetailDrawer() {
   const [isolation, setIsolation] = useState<IsolationCertificate | null>(null);
   const [gasRecords, setGasRecords] = useState<GasTestRecord[]>([]);
   const [acting,    setActing]    = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     if (!selectedPermitId || !permitDetailOpen) return;
@@ -96,6 +98,14 @@ export function PermitDetailDrawer() {
 
   const handleSuspend = () => changeStatus('SUSPENDED', 'Permit suspended. All workers notified.');
   const handleClose   = () => changeStatus('CLOSED',    'Permit closed successfully.');
+
+  const handleExportPDF = async () => {
+    if (!permit) return;
+    setExporting(true);
+    try { await downloadPermitPDF(permit); }
+    catch { showToast('Failed to generate PDF. Please try again.', 'error'); }
+    finally { setExporting(false); }
+  };
 
   return (
     <Drawer
@@ -228,6 +238,13 @@ export function PermitDetailDrawer() {
             <p className="text-xs text-gray-400 leading-relaxed">{permit.notes}</p>
           </Section>
         )}
+
+        {/* Export PDF — always available */}
+        <div className="flex items-center justify-end pt-2 pb-2 border-t border-surface-border">
+          <Button variant="ghost" size="sm" icon={Download} loading={exporting} onClick={handleExportPDF}>
+            Export PDF
+          </Button>
+        </div>
 
         {['DRAFT', 'ACTIVE', 'APPROVED'].includes(permit.status) && (
           <div className="flex items-center gap-2 pt-2 border-t border-surface-border">
