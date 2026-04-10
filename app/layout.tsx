@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { AppShell } from '@/components/layout/AppShell';
 import { CreatePermitWizard } from '@/components/permits/CreatePermitWizard';
+import { GlobalGasTestModal } from '@/components/gas/GlobalGasTestModal';
 
 export const metadata: Metadata = {
   title: 'ePTW Platform — Enterprise Permit to Work',
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
           {/* Global overlays */}
           <CreatePermitWizard />
+          <GlobalGasTestModal />
         </AppShell>
       </body>
     </html>
