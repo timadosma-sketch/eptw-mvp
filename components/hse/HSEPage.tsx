@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { ShieldCheck, TrendingUp, TrendingDown } from 'lucide-react';
 import { PageShell, SectionHeader } from '@/components/shared/PageShell';
 import { useT } from '@/lib/i18n/useT';
@@ -27,7 +28,14 @@ const HSE_KPIS = [
 
 export function HSEPage() {
   const { t } = useT();
-  const m = MOCK_DASHBOARD_METRICS;
+  const [m, setM] = useState(MOCK_DASHBOARD_METRICS);
+
+  useEffect(() => {
+    fetch('/api/dashboard')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.metrics) setM(d.metrics); })
+      .catch(() => {});
+  }, []);
 
   return (
     <PageShell title={t.hse.title} subtitle={t.hse.subtitle}>

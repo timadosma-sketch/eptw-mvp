@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Wind, AlertTriangle, CheckCircle2, Clock, Plus } from 'lucide-react';
 import { PageShell, SectionHeader } from '@/components/shared/PageShell';
 import { KPICard } from '@/components/shared/KPICard';
@@ -143,13 +143,26 @@ function GasEntryModal({ open, onClose }: GasEntryModalProps) {
 export function GasTestingPage() {
   const { t } = useT();
   const [entryModalOpen, setEntryModalOpen] = useState(false);
+  const [gasRecords, setGasRecords] = useState(MOCK_GAS_RECORDS);
+  const [gasAlerts, setGasAlerts] = useState(MOCK_GAS_ALERTS);
 
-  const activeAlerts = MOCK_GAS_ALERTS.filter(a => !a.acknowledged);
-  const safeCount    = MOCK_GAS_RECORDS.filter(r => r.overallStatus === 'SAFE').length;
-  const dangerCount  = MOCK_GAS_RECORDS.filter(r => r.overallStatus === 'DANGER').length;
-  const warningCount = MOCK_GAS_RECORDS.filter(r => r.overallStatus === 'WARNING').length;
+  useEffect(() => {
+    fetch('/api/gas-tests')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.data?.length) setGasRecords(d.data); })
+      .catch(() => {});
+    fetch('/api/gas-tests?alerts=true')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.data?.length) setGasAlerts(d.data); })
+      .catch(() => {});
+  }, []);
 
-  const latestRecord = MOCK_GAS_RECORDS
+  const activeAlerts = gasAlerts.filter(a => !a.acknowledged);
+  const safeCount    = gasRecords.filter(r => r.overallStatus === 'SAFE').length;
+  const dangerCount  = gasRecords.filter(r => r.overallStatus === 'DANGER').length;
+  const warningCount = gasRecords.filter(r => r.overallStatus === 'WARNING').length;
+
+  const latestRecord = gasRecords
     .filter(r => r.overallStatus === 'SAFE')
     .sort((a, b) => new Date(b.testedAt).getTime() - new Date(a.testedAt).getTime())[0];
 
@@ -231,7 +244,7 @@ export function GasTestingPage() {
           )}
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <KPICard label={t.gas.testsToday}    value={MOCK_GAS_RECORDS.length} icon={Wind}          variant="default" />
+            <KPICard label={t.gas.testsToday}    value={gasRecords.length} icon={Wind}          variant="default" />
             <KPICard label={t.gas.allSafe}        value={safeCount}               icon={CheckCircle2}  variant="success" />
             <KPICard label={t.gas.warnings}       value={warningCount}            icon={Clock}          variant={warningCount > 0 ? 'warning' : 'default'} />
             <KPICard label={t.gas.exceedances}    value={dangerCount}             icon={AlertTriangle}  variant={dangerCount > 0 ? 'danger' : 'default'} pulse={dangerCount > 0} />
@@ -252,7 +265,7 @@ export function GasTestingPage() {
             <SectionHeader title={t.gas.testHistory} />
             <DataTable
               columns={GAS_RECORD_COLUMNS}
-              data={MOCK_GAS_RECORDS}
+              data={gasRecords}
               keyExtractor={r => r.id}
               emptyMessage={t.gas.noTests}
             />

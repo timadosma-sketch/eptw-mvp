@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { BarChart2, Download } from 'lucide-react';
 import { PageShell, SectionHeader } from '@/components/shared/PageShell';
 import { KPICard } from '@/components/shared/KPICard';
@@ -24,7 +25,14 @@ function BarRow({ label, value, max, color }: { label: string; value: number; ma
 
 export function ReportsPage() {
   const { t } = useT();
-  const permits = MOCK_PERMITS;
+  const [permits, setPermits] = useState(MOCK_PERMITS);
+
+  useEffect(() => {
+    fetch('/api/permits?pageSize=200')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.data?.length) setPermits(d.data); })
+      .catch(() => {});
+  }, []);
 
   const byType: Record<PermitType, number> = {} as Record<PermitType, number>;
   const byStatus: Record<PermitStatus, number> = {} as Record<PermitStatus, number>;

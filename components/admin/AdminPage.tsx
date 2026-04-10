@@ -1,7 +1,7 @@
 'use client';
 
 import { Settings, Users, Bell, Shield } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PageShell } from '@/components/shared/PageShell';
 import { Button } from '@/components/shared/Button';
 import { useT } from '@/lib/i18n/useT';
@@ -11,12 +11,12 @@ import { cn } from '@/lib/utils/cn';
 
 type AdminTab = 'users' | 'system' | 'alerts' | 'security';
 
-function UsersTab() {
+function UsersTab({ users }: { users: typeof MOCK_USERS }) {
   const { t } = useT();
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div className="text-xs text-gray-500">{MOCK_USERS.length} {t.admin.usersCount}</div>
+        <div className="text-xs text-gray-500">{users.length} {t.admin.usersCount}</div>
         <Button variant="primary" size="sm">{t.admin.addUser}</Button>
       </div>
       <div className="overflow-x-auto rounded-md border border-surface-border">
@@ -29,7 +29,7 @@ function UsersTab() {
             </tr>
           </thead>
           <tbody>
-            {MOCK_USERS.map((u, i) => (
+            {users.map((u, i) => (
               <tr key={u.id} className={i % 2 === 0 ? 'bg-surface-raised' : 'bg-surface-base'}>
                 <td className="px-4 py-2.5 font-mono text-gray-400">{u.employeeId}</td>
                 <td className="px-4 py-2.5">
@@ -129,6 +129,14 @@ function AlertRulesTab() {
 export function AdminPage() {
   const { t } = useT();
   const [tab, setTab] = useState<AdminTab>('users');
+  const [users, setUsers] = useState(MOCK_USERS);
+
+  useEffect(() => {
+    fetch('/api/users')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.data?.length) setUsers(d.data); })
+      .catch(() => {});
+  }, []);
 
   const ADMIN_TABS = [
     { id: 'users'    as const, label: t.admin.usersRoles,   icon: Users    },
@@ -138,7 +146,7 @@ export function AdminPage() {
   ];
 
   const tabContent: Record<AdminTab, React.ReactNode> = {
-    users:    <UsersTab />,
+    users:    <UsersTab users={users} />,
     system:   <SystemTab />,
     alerts:   <AlertRulesTab />,
     security: (

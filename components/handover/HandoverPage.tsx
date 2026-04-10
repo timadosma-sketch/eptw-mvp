@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { RefreshCw, CheckCircle2, AlertTriangle, FileText, Users } from 'lucide-react';
 import { PageShell, SectionHeader } from '@/components/shared/PageShell';
 import { KPICard } from '@/components/shared/KPICard';
@@ -40,10 +41,29 @@ export function HandoverPage() {
   const showToast   = useAppStore(s => s.showToast);
   const { t } = useT();
 
-  const activePermits   = MOCK_PERMITS.filter(p => p.status === 'ACTIVE').length;
-  const suspendedCount  = MOCK_PERMITS.filter(p => p.status === 'SUSPENDED').length;
-  const gasAlertsCount  = MOCK_GAS_ALERTS.filter(a => !a.acknowledged).length;
-  const conflictCount   = MOCK_SIMOPS_CONFLICTS.filter(c => c.isActive).length;
+  const [permits,   setPermits]   = useState(MOCK_PERMITS.filter(p => !['ARCHIVED','DRAFT'].includes(p.status)));
+  const [gasAlerts, setGasAlerts] = useState(MOCK_GAS_ALERTS.filter(a => !a.acknowledged));
+  const [conflicts, setConflicts] = useState(MOCK_SIMOPS_CONFLICTS.filter(c => c.isActive));
+
+  useEffect(() => {
+    fetch('/api/permits?pageSize=100')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.data) setPermits(d.data.filter((p: any) => !['ARCHIVED','DRAFT'].includes(p.status))); })
+      .catch(() => {});
+    fetch('/api/gas-tests?alerts=true')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.data) setGasAlerts(d.data.filter((a: any) => !a.acknowledged)); })
+      .catch(() => {});
+    fetch('/api/simops?active=true')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.data) setConflicts(d.data); })
+      .catch(() => {});
+  }, []);
+
+  const activePermits   = permits.filter(p => p.status === 'ACTIVE').length;
+  const suspendedCount  = permits.filter(p => p.status === 'SUSPENDED').length;
+  const gasAlertsCount  = gasAlerts.length;
+  const conflictCount   = conflicts.length;
 
   const handleCompleteHandover = () => {
     showToast('Shift handover completed and signed off. Incoming supervisor notified.', 'success');
@@ -155,7 +175,7 @@ export function HandoverPage() {
                 </tr>
               </thead>
               <tbody>
-                {MOCK_PERMITS.filter(p => !['ARCHIVED', 'DRAFT'].includes(p.status)).map((p, i) => (
+                {permits.map((p, i) => (
                   <tr key={p.id} className={i % 2 === 0 ? 'bg-surface-raised' : 'bg-surface-base'}>
                     <td className="px-4 py-2.5 font-mono text-brand">{p.permitNumber}</td>
                     <td className="px-4 py-2.5 text-gray-300">{p.title.substring(0, 50)}</td>

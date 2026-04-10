@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { GitMerge, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
 import { PageShell, SectionHeader } from '@/components/shared/PageShell';
 import { KPICard } from '@/components/shared/KPICard';
@@ -29,11 +30,19 @@ const QUICK_MATRIX: Partial<Record<PermitType, Partial<Record<PermitType, SIMOPS
 
 export function SimopsPage() {
   const { t } = useT();
+  const [conflicts, setConflicts] = useState(MOCK_SIMOPS_CONFLICTS);
 
-  const activeConflicts   = MOCK_SIMOPS_CONFLICTS.filter(c => c.isActive);
-  const resolvedConflicts = MOCK_SIMOPS_CONFLICTS.filter(c => !c.isActive);
-  const prohibitedCount   = MOCK_SIMOPS_CONFLICTS.filter(c => c.compatibility === 'PROHIBITED').length;
-  const conditionalCount  = MOCK_SIMOPS_CONFLICTS.filter(c => c.compatibility === 'CONDITIONAL').length;
+  useEffect(() => {
+    fetch('/api/simops')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.data?.length) setConflicts(d.data); })
+      .catch(() => {});
+  }, []);
+
+  const activeConflicts   = conflicts.filter(c => c.isActive);
+  const resolvedConflicts = conflicts.filter(c => !c.isActive);
+  const prohibitedCount   = conflicts.filter(c => c.compatibility === 'PROHIBITED').length;
+  const conditionalCount  = conflicts.filter(c => c.compatibility === 'CONDITIONAL').length;
 
   const getCompatLabel = (compat: SIMOPSCompatibility) => {
     if (compat === 'COMPATIBLE') return t.simops.compatible;
