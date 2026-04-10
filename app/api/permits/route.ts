@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/auth';
 import { getPermits } from '@/lib/dal/permits.dal';
 import type { PermitFilters } from '@/lib/types';
 
@@ -32,6 +33,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await auth();
+    const sessionUserId = (session?.user as Record<string, unknown> | undefined)?.id as string | undefined;
+
     const body = await req.json();
     const { db } = await import('@/lib/db');
     const { mapPermit } = await import('@/lib/dal/mappers');
@@ -58,7 +62,7 @@ export async function POST(req: NextRequest) {
         unit:         body.unit         ?? '',
         area:         body.area         ?? '',
         equipment:    body.equipment    ?? '',
-        requestedById: body.requestedById ?? 'usr-001',
+        requestedById: body.requestedById ?? sessionUserId ?? 'usr-001',
         areaAuthorityId:    body.areaAuthorityId    ?? null,
         issuingAuthorityId: body.issuingAuthorityId ?? null,
         hseOfficerId:       body.hseOfficerId       ?? null,

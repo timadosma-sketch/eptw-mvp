@@ -194,7 +194,10 @@ function StepRiskAssessment({ risk, onChange }: { risk: RiskState; onChange: (v:
   );
 }
 
-function StepReview({ type, workDetails, risk }: { type: PermitType | null; workDetails: Partial<WorkDetails>; risk: RiskState }) {
+function StepReview({ type, workDetails, risk, reqs, contractors }: {
+  type: PermitType | null; workDetails: Partial<WorkDetails>; risk: RiskState;
+  reqs: ReqsState; contractors: ContractorEntry[];
+}) {
   const { t } = useT();
   if (!type) return <p className="text-xs text-gray-500">Please complete previous steps.</p>;
   const cfg = PERMIT_TYPE_CONFIG[type];
@@ -211,8 +214,12 @@ function StepReview({ type, workDetails, risk }: { type: PermitType | null; work
           <ReviewRow label={t.wizard.validFrom}      value={workDetails.validFrom ?? '—'} />
           <ReviewRow label={t.wizard.validTo}        value={workDetails.validTo ?? '—'} />
           <ReviewRow label={t.wizard.workerCount}    value={String(workDetails.workerCount ?? 0)} />
-          <ReviewRow label="JSA Completed"           value={risk.jsaCompleted ? '✓ Yes' : '✗ No'} />
-          <ReviewRow label="Toolbox Talk"            value={risk.toolboxTalk  ? '✓ Planned' : '✗ Not planned'} />
+          <ReviewRow label="JSA Completed"     value={risk.jsaCompleted      ? '✓ Yes' : '✗ No'} />
+          <ReviewRow label="Toolbox Talk"     value={risk.toolboxTalk       ? '✓ Planned' : '✗ Not planned'} />
+          <ReviewRow label="Gas Test"         value={reqs.gasTestRequired   ? '✓ Required' : 'Not required'} />
+          <ReviewRow label="Isolation / LOTO" value={reqs.isolationRequired ? '✓ Required' : 'Not required'} />
+          <ReviewRow label="Confined Space"   value={reqs.confinedSpaceEntry? '✓ Yes' : 'No'} />
+          <ReviewRow label="Contractors"      value={contractors.length > 0 ? `${contractors.length} added` : 'None'} />
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -221,6 +228,192 @@ function StepReview({ type, workDetails, risk }: { type: PermitType | null; work
         {cfg.isHotWork         && <span className="text-2xs px-2 py-1 rounded bg-red-900/40 border border-red-800 text-red-400">{t.wizard.hotWork}</span>}
       </div>
       <p className="text-xs text-gray-500">{t.wizard.confirmNote}</p>
+    </div>
+  );
+}
+
+// ─── Requirements types & steps ──────────────────────────────────────────────
+
+interface ReqsState {
+  gasTestRequired:    boolean;
+  isolationRequired:  boolean;
+  confinedSpaceEntry: boolean;
+}
+
+interface ContractorEntry {
+  id:        string;
+  name:      string;
+  company:   string;
+  role:      string;
+  induction: boolean;
+}
+
+function ToggleRow({
+  label, sublabel, checked, onChange, autoApplied,
+}: {
+  label: string; sublabel: string; checked: boolean;
+  onChange: (v: boolean) => void; autoApplied?: boolean;
+}) {
+  return (
+    <div className={cn(
+      'flex items-start gap-4 p-3 rounded border transition-colors cursor-pointer',
+      checked ? 'border-brand/40 bg-brand/5' : 'border-surface-border bg-surface-panel hover:bg-surface-hover',
+    )} onClick={() => onChange(!checked)}>
+      <div className={cn(
+        'mt-0.5 w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors',
+        checked ? 'border-brand bg-brand' : 'border-gray-600 bg-transparent',
+      )}>
+        {checked && <Check className="w-2.5 h-2.5 text-black" />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-gray-200">{label}</span>
+          {autoApplied && (
+            <span className="text-2xs bg-brand/20 border border-brand/40 text-brand px-1.5 py-0.5 rounded font-mono">
+              auto
+            </span>
+          )}
+        </div>
+        <p className="text-2xs text-gray-500 mt-0.5">{sublabel}</p>
+      </div>
+    </div>
+  );
+}
+
+function StepIsolation({
+  reqs, onChange, permitType,
+}: { reqs: ReqsState; onChange: (r: ReqsState) => void; permitType: PermitType | null }) {
+  const autoIso = permitType ? (PERMIT_TYPE_CONFIG[permitType]?.requiresIsolation ?? false) : false;
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-gray-500">
+        Isolation ensures all energy sources are locked out before work begins (LOTO).
+        Required for electrical, pressure, and line-breaking work.
+      </p>
+      <ToggleRow
+        label="Isolation / LOTO Required"
+        sublabel="A formal isolation certificate must be issued and verified before work commences."
+        checked={reqs.isolationRequired}
+        onChange={v => onChange({ ...reqs, isolationRequired: v })}
+        autoApplied={autoIso}
+      />
+      {reqs.isolationRequired && (
+        <div className="p-3 rounded border border-yellow-700/40 bg-yellow-900/10 text-xs text-yellow-400">
+          An Isolation Certificate will need to be raised and verified by the Area Authority before this permit can be activated.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StepGasRequirements({
+  reqs, onChange, permitType,
+}: { reqs: ReqsState; onChange: (r: ReqsState) => void; permitType: PermitType | null }) {
+  const autoGas = permitType ? (PERMIT_TYPE_CONFIG[permitType]?.requiresGasTest ?? false) : false;
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-gray-500">
+        Select the atmospheric and space-entry requirements for this work. These determine mandatory pre-work checks.
+      </p>
+      <ToggleRow
+        label="Gas Test Required"
+        sublabel="Atmospheric testing must be conducted and recorded before and during work. Retest interval: 60 minutes."
+        checked={reqs.gasTestRequired}
+        onChange={v => onChange({ ...reqs, gasTestRequired: v })}
+        autoApplied={autoGas}
+      />
+      <ToggleRow
+        label="Confined Space Entry (CSE)"
+        sublabel="Work is performed inside a confined space. Requires a CSE supervisor, rescue plan, and continuous atmospheric monitoring."
+        checked={reqs.confinedSpaceEntry}
+        onChange={v => onChange({ ...reqs, confinedSpaceEntry: v })}
+        autoApplied={permitType === 'CONFINED_SPACE'}
+      />
+      {reqs.gasTestRequired && (
+        <div className="p-3 rounded border border-cyan-700/40 bg-cyan-900/10 text-xs text-cyan-400">
+          Gas readings (O₂, LEL, H₂S, CO) must be within safe limits before activation. Retesting required every 60 minutes.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StepContractors({
+  contractors, onChange,
+}: { contractors: ContractorEntry[]; onChange: (c: ContractorEntry[]) => void }) {
+  const [name,      setName]      = useState('');
+  const [company,   setCompany]   = useState('');
+  const [role,      setRole]      = useState('');
+  const [induction, setInduction] = useState(false);
+
+  const inputCls = "w-full text-xs bg-surface-panel border border-surface-border rounded px-3 py-2 text-gray-200 placeholder-gray-600 focus:outline-none focus:border-brand/60";
+
+  const addContractor = () => {
+    if (!name.trim() || !company.trim()) return;
+    onChange([...contractors, {
+      id: `c-${Date.now()}`,
+      name: name.trim(),
+      company: company.trim(),
+      role: role.trim() || 'Worker',
+      induction,
+    }]);
+    setName(''); setCompany(''); setRole(''); setInduction(false);
+  };
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-gray-500">
+        Add contractors who will perform or supervise this work. Site induction status must be confirmed before activation.
+      </p>
+
+      {/* Add form */}
+      <div className="p-3 rounded border border-surface-border bg-surface-panel space-y-2">
+        <div className="text-2xs font-bold uppercase tracking-wider text-gray-600 mb-2">Add Contractor</div>
+        <div className="grid grid-cols-2 gap-2">
+          <input value={name}    onChange={e => setName(e.target.value)}    placeholder="Full name *"    className={inputCls} />
+          <input value={company} onChange={e => setCompany(e.target.value)} placeholder="Company *"      className={inputCls} />
+          <input value={role}    onChange={e => setRole(e.target.value)}    placeholder="Role / trade"   className={inputCls} />
+          <label className="flex items-center gap-2 text-xs text-gray-400 cursor-pointer px-2">
+            <input type="checkbox" className="accent-brand" checked={induction} onChange={e => setInduction(e.target.checked)} />
+            Site induction complete
+          </label>
+        </div>
+        <Button
+          variant="secondary" size="xs"
+          disabled={!name.trim() || !company.trim()}
+          onClick={addContractor}
+        >
+          Add
+        </Button>
+      </div>
+
+      {/* Contractor list */}
+      {contractors.length === 0 ? (
+        <p className="text-xs text-gray-600 italic text-center py-2">No contractors added — this is optional.</p>
+      ) : (
+        <div className="space-y-1.5">
+          {contractors.map(c => (
+            <div key={c.id} className="flex items-center justify-between gap-3 px-3 py-2 rounded border border-surface-border bg-surface-raised text-xs">
+              <div>
+                <span className="text-gray-200 font-medium">{c.name}</span>
+                <span className="text-gray-500 ml-2">{c.company} · {c.role}</span>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {c.induction
+                  ? <span className="text-emerald-400 text-2xs font-semibold">✓ Inducted</span>
+                  : <span className="text-yellow-500 text-2xs">Pending induction</span>
+                }
+                <button
+                  onClick={() => onChange(contractors.filter(x => x.id !== c.id))}
+                  className="text-gray-600 hover:text-red-400 transition ml-1"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -246,7 +439,20 @@ export function CreatePermitWizard() {
   const [permitType,   setPermitType]   = useState<PermitType | null>(null);
   const [workDetails,  setWorkDetails]  = useState<Partial<WorkDetails>>({});
   const [risk,         setRisk]         = useState<RiskState>({ level: 'MEDIUM', jsaCompleted: false, toolboxTalk: false });
+  const [reqs,         setReqs]         = useState<ReqsState>({ gasTestRequired: false, isolationRequired: false, confinedSpaceEntry: false });
+  const [contractors,  setContractors]  = useState<ContractorEntry[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Auto-populate requirements when permit type is chosen
+  const handleTypeChange = (type: PermitType) => {
+    const cfg = PERMIT_TYPE_CONFIG[type];
+    setPermitType(type);
+    setReqs({
+      gasTestRequired:   cfg.requiresGasTest   ?? false,
+      isolationRequired: cfg.requiresIsolation ?? false,
+      confinedSpaceEntry: type === 'CONFINED_SPACE',
+    });
+  };
 
   const steps = CREATE_PERMIT_STEPS;
   const current = steps[wizardStep];
@@ -286,9 +492,12 @@ export function CreatePermitWizard() {
         workerCount: workDetails.workerCount ?? 1,
         jsaCompleted:         risk.jsaCompleted,
         toolboxTalkCompleted: risk.toolboxTalk,
+        gasTestRequired:      reqs.gasTestRequired,
+        isolationRequired:    reqs.isolationRequired,
+        confinedSpaceEntry:   reqs.confinedSpaceEntry,
       });
       closeWizard();
-      showToast(`Permit ${permit.permitNumber} submitted for approval.`, 'success');
+      showToast(`Permit ${permit.permitNumber} created as DRAFT — open it to submit for approval.`, 'success');
     } catch {
       showToast('Failed to submit permit. Please try again.', 'error');
     } finally {
@@ -298,13 +507,13 @@ export function CreatePermitWizard() {
 
   const stepContent = () => {
     switch (wizardStep) {
-      case 0: return <StepTypeSelect selected={permitType} onChange={setPermitType} />;
+      case 0: return <StepTypeSelect selected={permitType} onChange={handleTypeChange} />;
       case 1: return <StepWorkDetails data={workDetails} onChange={setWorkDetails} />;
       case 2: return <StepRiskAssessment risk={risk} onChange={setRisk} />;
-      case 3: return <div className="text-xs text-gray-500 py-4">{t.wizard.isoPlaceholder}</div>;
-      case 4: return <div className="text-xs text-gray-500 py-4">{t.wizard.gasPlaceholder}</div>;
-      case 5: return <div className="text-xs text-gray-500 py-4">{t.wizard.crewPlaceholder}</div>;
-      case 6: return <StepReview type={permitType} workDetails={workDetails} risk={risk} />;
+      case 3: return <StepIsolation reqs={reqs} onChange={setReqs} permitType={permitType} />;
+      case 4: return <StepGasRequirements reqs={reqs} onChange={setReqs} permitType={permitType} />;
+      case 5: return <StepContractors contractors={contractors} onChange={setContractors} />;
+      case 6: return <StepReview type={permitType} workDetails={workDetails} risk={risk} reqs={reqs} contractors={contractors} />;
       default: return null;
     }
   };

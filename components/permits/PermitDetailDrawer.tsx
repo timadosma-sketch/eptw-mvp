@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import {
-  MapPin, Wind, AlertTriangle, CheckCircle2, XCircle, Paperclip, Send, Download,
+  MapPin, Wind, AlertTriangle, CheckCircle2, XCircle, Paperclip, Send, Download, PlayCircle,
 } from 'lucide-react';
 import { Drawer } from '@/components/shared/Modal';
 import { PermitStatusBadge, RiskBadge, GasStatusBadge } from '@/components/shared/StatusBadge';
@@ -253,10 +253,15 @@ export function PermitDetailDrawer() {
         </div>
 
         {['DRAFT', 'ACTIVE', 'APPROVED'].includes(permit.status) && (
-          <div className="flex items-center gap-2 pt-2 border-t border-surface-border">
+          <div className="flex items-center gap-2 pt-2 border-t border-surface-border flex-wrap">
             {permit.status === 'DRAFT' && canSubmit && (
               <Button variant="primary" size="sm" icon={Send} loading={acting} onClick={() => changeStatus('SUBMITTED', `Permit ${permit.permitNumber} submitted for approval.`)}>
                 Submit for Approval
+              </Button>
+            )}
+            {permit.status === 'APPROVED' && canControl && (
+              <Button variant="success" size="sm" icon={PlayCircle} loading={acting} onClick={() => changeStatus('ACTIVE', `Permit ${permit.permitNumber} activated — work may commence.`)}>
+                Activate Permit
               </Button>
             )}
             {permit.gasTestRequired && permit.status !== 'DRAFT' && canGasTest && (
