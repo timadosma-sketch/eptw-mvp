@@ -47,6 +47,8 @@ export function HandoverPage() {
   const [notes, setNotes] = useState('HCU line break permit suspended — LEL source investigation ongoing. Do not reinstate without HSE clearance.');
   const [signingOff, setSigningOff] = useState(false);
   const [signedOff, setSignedOff] = useState(false);
+  const [incomingSupervisors, setIncomingSupervisors] = useState<{ id: string; name: string; role: string }[]>([]);
+  const [incomingId, setIncomingId] = useState('');
 
   useEffect(() => {
     fetch('/api/permits?pageSize=100')
@@ -60,6 +62,18 @@ export function HandoverPage() {
     fetch('/api/simops?active=true')
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d?.data) setConflicts(d.data); })
+      .catch(() => {});
+    // Load potential incoming supervisors (SITE_SUPERVISOR + ISSUING_AUTHORITY)
+    fetch('/api/users')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!d?.data) return;
+        const candidates = d.data.filter((u: { id: string; name: string; role: string }) =>
+          ['SITE_SUPERVISOR', 'ISSUING_AUTHORITY', 'PLANT_OPS_MANAGER'].includes(u.role) && u.id !== currentUser.id
+        );
+        setIncomingSupervisors(candidates);
+        if (candidates.length > 0) setIncomingId(candidates[0].id);
+      })
       .catch(() => {});
   }, []);
 
@@ -82,7 +96,7 @@ export function HandoverPage() {
           performedById: currentUser.id,
           metadata: {
             outgoingSupervisor: currentUser.name,
-            incomingSupervisor: 'Aliya Nurmagambetova',
+            incomingSupervisor: incomingSupervisors.find(u => u.id === incomingId)?.name ?? incomingId,
             activePermits,
             suspendedPermits: suspendedCount,
             gasAlerts: gasAlertsCount,
@@ -155,8 +169,19 @@ export function HandoverPage() {
 
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">{t.handover.incomingSupervisor}</label>
-                <select className="w-full text-xs bg-surface-panel border border-surface-border rounded px-3 py-2 text-gray-300 focus:outline-none focus:border-brand/60">
-                  <option>Aliya Nurmagambetova — Night Shift</option>
+                <select
+                  value={incomingId}
+                  onChange={e => setIncomingId(e.target.value)}
+                  className="w-full text-xs bg-surface-panel border border-surface-border rounded px-3 py-2 text-gray-300 focus:outline-none focus:border-brand/60"
+                >
+                  {incomingSupervisors.length === 0 && (
+                    <option value="">Loading supervisors…</option>
+                  )}
+                  {incomingSupervisors.map(u => (
+                    <option key={u.id} value={u.id}>
+                      {u.name} — {u.role.replace(/_/g, ' ')}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
