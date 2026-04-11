@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getPermits } from '@/lib/dal/permits.dal';
+import { logAction } from '@/lib/dal/audit.dal';
 import type { PermitFilters } from '@/lib/types';
 
 export async function GET(req: NextRequest) {
@@ -82,7 +83,24 @@ export async function POST(req: NextRequest) {
       include: PERMIT_INCLUDE,
     });
 
-    return NextResponse.json(mapPermit(row), { status: 201 });
+    const mapped = mapPermit(row);
+
+    // Audit log — fire-and-forget
+    const sessionUser = session?.user as Record<string, unknown> | undefined;
+    const performerId = (sessionUser?.id as string | undefined) ?? body.requestedById ?? 'system';
+    logAction({
+      action:      'PERMIT_CREATED',
+      entity:      'PERMIT',
+      entityId:    row.id,
+      entityRef:   row.permitNumber,
+      performedBy: { id: performerId } as any,
+      ipAddress:   req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? '',
+      deviceInfo:  req.headers.get('user-agent') ?? '',
+      changes:     [],
+      metadata:    { type: row.type, riskLevel: row.riskLevel, location: row.location },
+    }).catch(err => console.error('[audit permit create]', err));
+
+    return NextResponse.json(mapped, { status: 201 });
   } catch (err) {
     console.error('[POST /api/permits]', err);
     return NextResponse.json({ error: 'Failed to create permit' }, { status: 500 });
