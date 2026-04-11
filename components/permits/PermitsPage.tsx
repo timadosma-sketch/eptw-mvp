@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Search, Plus, RefreshCw } from 'lucide-react';
 import { PageShell } from '@/components/shared/PageShell';
 import { DataTable, Column } from '@/components/shared/DataTable';
@@ -26,6 +27,14 @@ export function PermitsPage() {
   const currentUser      = useAppStore(s => s.currentUser);
   const dataVersion      = useAppStore(s => s.dataVersion);
   const { t } = useT();
+  const searchParams     = useSearchParams();
+
+  // Deep-link: ?open=<permitId> opens the drawer on mount
+  useEffect(() => {
+    const openId = searchParams.get('open');
+    if (openId) openPermitDetail(openId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const canCreate = rbac.canCreatePermit(currentUser?.role);
 

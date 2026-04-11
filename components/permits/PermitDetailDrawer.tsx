@@ -201,6 +201,17 @@ export function PermitDetailDrawer() {
           <InfoRow label={t.permitDetail.validFrom}  value={<span className="font-mono">{formatDateTime(permit.validFrom)}</span>} />
           <InfoRow label={t.permitDetail.validTo}    value={<span className="font-mono">{formatDateTime(permit.validTo)}</span>} />
           <InfoRow label={t.permitDetail.simopsZone} value={<span className="font-mono">{permit.simopsZone || '—'}</span>} />
+          <InfoRow label="QR / Deep Link" value={
+            <button
+              className="text-brand hover:underline font-mono text-xs"
+              onClick={() => {
+                const url = `${window.location.origin}/permits?open=${permit.id}`;
+                navigator.clipboard.writeText(url).then(() => showToast('Permit link copied to clipboard.', 'info'));
+              }}
+            >
+              {permit.qrCode} ↗
+            </button>
+          } />
           <InfoRow label={t.permitDetail.workers}    value={`${permit.workerCount} ${t.common.persons}`} />
         </Section>
 
