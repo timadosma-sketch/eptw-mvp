@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { GitMerge, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
 import { PageShell, SectionHeader } from '@/components/shared/PageShell';
 import { KPICard } from '@/components/shared/KPICard';
+import { Button } from '@/components/shared/Button';
+import { useAppStore } from '@/lib/store/useAppStore';
+import { rbac } from '@/lib/rbac';
 import { useT } from '@/lib/i18n/useT';
 import { MOCK_SIMOPS_CONFLICTS } from '@/lib/mock/simops';
 import { PERMIT_TYPE_CONFIG } from '@/lib/constants';
@@ -30,19 +33,48 @@ const QUICK_MATRIX: Partial<Record<PermitType, Partial<Record<PermitType, SIMOPS
 
 export function SimopsPage() {
   const { t } = useT();
+  const showToast   = useAppStore(s => s.showToast);
+  const currentUser = useAppStore(s => s.currentUser);
+  const dataVersion = useAppStore(s => s.dataVersion);
+  const canControl  = rbac.canControlPermit(currentUser?.role);
   const [conflicts, setConflicts] = useState(MOCK_SIMOPS_CONFLICTS);
+  const [resolving, setResolving] = useState<string | null>(null);
+
+  const loadConflicts = () => {
+    fetch('/api/simops')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.data?.length) setConflicts(d.data); })
+      .catch(() => {});
+  };
 
   useEffect(() => {
-    const load = () => {
-      fetch('/api/simops')
-        .then(r => r.ok ? r.json() : null)
-        .then(d => { if (d?.data?.length) setConflicts(d.data); })
-        .catch(() => {});
-    };
-    load();
-    const interval = setInterval(load, 30_000);
+    loadConflicts();
+    const interval = setInterval(loadConflicts, 30_000);
     return () => clearInterval(interval);
-  }, []);
+  }, [dataVersion]);
+
+  const handleResolve = async (id: string) => {
+    const resolution = window.prompt('Enter resolution / action taken:');
+    if (!resolution?.trim()) return;
+    setResolving(id);
+    try {
+      const res = await fetch(`/api/simops/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resolution }),
+      });
+      if (res.ok) {
+        showToast('SIMOPS conflict resolved.', 'success');
+        loadConflicts();
+      } else {
+        showToast('Failed to resolve conflict.', 'error');
+      }
+    } catch {
+      showToast('Network error.', 'error');
+    } finally {
+      setResolving(null);
+    }
+  };
 
   const activeConflicts   = conflicts.filter(c => c.isActive);
   const resolvedConflicts = conflicts.filter(c => !c.isActive);
@@ -109,8 +141,21 @@ export function SimopsPage() {
                     )}
 
                     <div className="text-xs text-gray-500">{conflict.resolution}</div>
-                    <div className="text-2xs text-gray-600 mt-1.5">
-                      {t.simops.raisedBy} {conflict.raisedBy.name} at {formatDateTime(conflict.raisedAt)}
+                    <div className="flex items-center justify-between mt-2 gap-2">
+                      <div className="text-2xs text-gray-600">
+                        {t.simops.raisedBy} {conflict.raisedBy.name} at {formatDateTime(conflict.raisedAt)}
+                      </div>
+                      {canControl && (
+                        <Button
+                          variant="success"
+                          size="xs"
+                          icon={CheckCircle2}
+                          loading={resolving === conflict.id}
+                          onClick={() => handleResolve(conflict.id)}
+                        >
+                          Resolve
+                        </Button>
+                      )}
                     </div>
                   </div>
                 );

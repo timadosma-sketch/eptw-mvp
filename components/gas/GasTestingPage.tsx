@@ -204,7 +204,9 @@ function GasEntryModal({ open, onClose, onSuccess }: GasEntryModalProps) {
 export function GasTestingPage() {
   const { t } = useT();
   const currentUser = useAppStore(s => s.currentUser);
-  const canTest     = rbac.canRecordGasTest(currentUser?.role);
+  const dataVersion    = useAppStore(s => s.dataVersion);
+  const bumpDataVersion = useAppStore(s => s.bumpDataVersion);
+  const canTest         = rbac.canRecordGasTest(currentUser?.role);
   const [entryModalOpen, setEntryModalOpen] = useState(false);
   const [gasRecords, setGasRecords] = useState(MOCK_GAS_RECORDS);
   const [gasAlerts, setGasAlerts] = useState(MOCK_GAS_ALERTS);
@@ -225,7 +227,7 @@ export function GasTestingPage() {
     load();
     const interval = setInterval(load, 30_000);
     return () => clearInterval(interval);
-  }, []);
+  }, [dataVersion]);
 
   const activeAlerts = gasAlerts.filter(a => !a.acknowledged);
   const safeCount    = gasRecords.filter(r => r.overallStatus === 'SAFE').length;
@@ -346,7 +348,7 @@ export function GasTestingPage() {
         </div>
       </PageShell>
 
-      <GasEntryModal open={entryModalOpen} onClose={() => setEntryModalOpen(false)} onSuccess={loadGasData} />
+      <GasEntryModal open={entryModalOpen} onClose={() => setEntryModalOpen(false)} onSuccess={() => { loadGasData(); bumpDataVersion(); }} />
     </>
   );
 }

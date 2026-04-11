@@ -27,3 +27,21 @@ export async function getActiveConflicts(): Promise<SIMOPSConflict[]> {
 export async function countActiveConflicts(): Promise<number> {
   return db.sIMOPSConflict.count({ where: { isActive: true } });
 }
+
+export async function resolveConflict(
+  id: string,
+  resolvedById: string | null,
+  resolution: string,
+): Promise<SIMOPSConflict> {
+  const row = await db.sIMOPSConflict.update({
+    where: { id },
+    data: {
+      isActive:     false,
+      resolution,
+      resolvedById: resolvedById ?? undefined,
+      resolvedAt:   new Date().toISOString(),
+    },
+    include: SIMOPS_INCLUDE,
+  });
+  return mapSIMOPS(row);
+}
