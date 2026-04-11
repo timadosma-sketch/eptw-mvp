@@ -5,11 +5,12 @@ import type { AuditEntry } from '@/lib/types';
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const entityId = searchParams.get('entityId') ?? undefined;
-    const page     = Number(searchParams.get('page') ?? 1);
-    const pageSize = Number(searchParams.get('pageSize') ?? 20);
+    const entityId  = searchParams.get('entityId') ?? undefined;
+    const entity    = searchParams.get('entity')   ?? undefined;
+    const page      = Number(searchParams.get('page') ?? 1);
+    const pageSize  = Number(searchParams.get('pageSize') ?? 20);
 
-    const result = await getAuditLog(entityId, page, pageSize);
+    const result = await getAuditLog(entityId, page, pageSize, entity);
     return NextResponse.json(result);
   } catch (err) {
     console.error('[GET /api/audit]', err);

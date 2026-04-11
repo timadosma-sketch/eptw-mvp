@@ -24,6 +24,7 @@ const VALID_TRANSITIONS: Partial<Record<PermitStatus, PermitStatus[]>> = {
   APPROVED:     ['ACTIVE', 'CANCELLED'],
   ACTIVE:       ['SUSPENDED', 'CLOSED', 'CANCELLED'],
   SUSPENDED:    ['ACTIVE', 'CANCELLED', 'CLOSED'],
+  REJECTED:     ['DRAFT'],  // Allow requester to revise and re-submit
 };
 
 // Map risk level to approval priority and SLA hours

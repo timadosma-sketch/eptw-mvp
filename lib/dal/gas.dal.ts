@@ -129,3 +129,14 @@ export async function countGasAlerts(): Promise<number> {
     },
   });
 }
+
+export async function acknowledgeAlert(alertId: string, acknowledgedById: string): Promise<void> {
+  await db.alert.update({
+    where: { id: alertId },
+    data: {
+      acknowledged: true,
+      acknowledgedById,
+      acknowledgedAt: new Date(),
+    },
+  });
+}

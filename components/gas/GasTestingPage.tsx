@@ -312,7 +312,16 @@ export function GasTestingPage() {
           {activeAlerts.length > 0 && (
             <div className="space-y-2">
               {activeAlerts.map(a => (
-                <AlertStrip key={a.id} alert={a} />
+                <AlertStrip
+                  key={a.id}
+                  alert={a}
+                  onAcknowledge={async (id) => {
+                    try {
+                      const res = await fetch(`/api/gas-tests/alerts/${id}`, { method: 'PATCH' });
+                      if (res.ok) { loadGasData(); bumpDataVersion(); }
+                    } catch { /* silent */ }
+                  }}
+                />
               ))}
             </div>
           )}

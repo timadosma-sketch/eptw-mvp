@@ -73,8 +73,9 @@ function IsolationPointRow({ point }: { point: IsolationPoint }) {
 
 export function IsolationPage() {
   const { t } = useT();
-  const showToast   = useAppStore(s => s.showToast);
-  const dataVersion = useAppStore(s => s.dataVersion);
+  const showToast      = useAppStore(s => s.showToast);
+  const dataVersion    = useAppStore(s => s.dataVersion);
+  const bumpDataVersion = useAppStore(s => s.bumpDataVersion);
   const [certs, setCerts] = useState(MOCK_ISOLATION_CERTS);
   const [acting, setActing] = useState<string | null>(null); // certId currently updating
 
@@ -102,6 +103,7 @@ export function IsolationPage() {
       if (res.ok) {
         showToast(successMsg, 'success');
         loadCerts();
+        bumpDataVersion();
       } else {
         const err = await res.json().catch(() => ({}));
         showToast(err.error || 'Action failed. Please try again.', 'error');

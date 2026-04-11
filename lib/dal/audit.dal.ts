@@ -10,10 +10,12 @@ export async function getAuditLog(
   entityId?: string,
   page = 1,
   pageSize = DEFAULT_PAGE_SIZE,
+  entity?: string,
 ): Promise<PaginatedResult<AuditEntry>> {
-  const where: Prisma.AuditEntryWhereInput = entityId
-    ? { entityId }
-    : {};
+  const where: Prisma.AuditEntryWhereInput = {
+    ...(entityId ? { entityId } : {}),
+    ...(entity   ? { entity }   : {}),
+  };
 
   const [total, rows] = await Promise.all([
     db.auditEntry.count({ where }),

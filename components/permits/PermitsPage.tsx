@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils/cn';
 import type { Permit, PermitStatus, PermitType } from '@/lib/types';
 
 const STATUS_FILTERS: PermitStatus[] = [
-  'ACTIVE', 'APPROVED', 'UNDER_REVIEW', 'SUBMITTED', 'SUSPENDED', 'DRAFT', 'CLOSED',
+  'ACTIVE', 'APPROVED', 'UNDER_REVIEW', 'SUBMITTED', 'SUSPENDED', 'DRAFT', 'CLOSED', 'REJECTED', 'EXPIRED', 'CANCELLED',
 ];
 
 export function PermitsPage() {
@@ -207,7 +207,7 @@ export function PermitsPage() {
           )}
 
           <div className="ml-auto flex items-center gap-2 flex-wrap">
-            {(['ACTIVE','SUBMITTED','SUSPENDED','CLOSED'] as PermitStatus[]).map(s => {
+            {(['ACTIVE','SUBMITTED','SUSPENDED','REJECTED','CLOSED'] as PermitStatus[]).map(s => {
               const cfg = PERMIT_STATUS_CONFIG[s];
               const count = permits.filter(p => p.status === s).length;
               return (

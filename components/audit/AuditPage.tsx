@@ -34,18 +34,22 @@ const ACTION_COLOR: Partial<Record<AuditAction, string>> = {
   SYSTEM_ALERT:             'text-red-300',
 };
 
+const ENTITY_FILTERS = ['', 'PERMIT', 'GAS_TEST', 'ISOLATION', 'APPROVAL', 'HANDOVER', 'USER'] as const;
+
 export function AuditPage() {
   const { t } = useT();
   const [search,     setSearch]     = useState('');
+  const [entityF,    setEntityF]    = useState('');
   const [log,        setLog]        = useState<AuditEntry[]>(MOCK_AUDIT_LOG);
   const [page,       setPage]       = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total,      setTotal]      = useState(MOCK_AUDIT_LOG.length);
   const [loading,    setLoading]    = useState(false);
 
-  const loadPage = (p: number) => {
+  const loadPage = (p: number, entity?: string) => {
     setLoading(true);
-    fetch(`/api/audit?page=${p}&pageSize=${PAGE_SIZE}`)
+    const entityParam = (entity ?? entityF) ? `&entity=${entity ?? entityF}` : '';
+    fetch(`/api/audit?page=${p}&pageSize=${PAGE_SIZE}${entityParam}`)
       .then(r => r.ok ? r.json() : null)
       .then(json => {
         if (json?.data) {
@@ -67,6 +71,12 @@ export function AuditPage() {
   const handleSearch = (val: string) => {
     setSearch(val);
     if (page !== 1) setPage(1);
+  };
+
+  const handleEntityFilter = (val: string) => {
+    setEntityF(val);
+    setPage(1);
+    loadPage(1, val);
   };
 
   const filtered = log.filter(e => {
@@ -160,6 +170,25 @@ export function AuditPage() {
             className="pl-9 pr-3 py-2 bg-surface-raised border border-surface-border rounded text-xs text-gray-300 placeholder-gray-600 focus:outline-none focus:border-brand/50 w-72"
           />
         </div>
+
+        <select
+          value={entityF}
+          onChange={e => handleEntityFilter(e.target.value)}
+          className="text-xs bg-surface-panel border border-surface-border rounded px-3 py-2 text-gray-300 focus:outline-none focus:border-brand/60"
+        >
+          {ENTITY_FILTERS.map(ef => (
+            <option key={ef} value={ef}>{ef || 'All Entities'}</option>
+          ))}
+        </select>
+
+        {(search || entityF) && (
+          <button
+            onClick={() => { setSearch(''); handleEntityFilter(''); }}
+            className="text-xs text-gray-600 hover:text-gray-400 transition-colors"
+          >
+            ✕ Clear
+          </button>
+        )}
 
         {/* Pagination controls */}
         {totalPages > 1 && (

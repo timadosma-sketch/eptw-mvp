@@ -239,6 +239,7 @@ export function PermitDetailDrawer() {
                 <div className="flex items-center gap-3 mb-2">
                   <GasStatusBadge status={latestGas.overallStatus} />
                   <span className="text-xs font-mono text-gray-500">{formatDateTime(latestGas.testedAt)}</span>
+                  <span className="text-2xs text-gray-600 ml-auto">by {latestGas.testedBy?.name ?? '—'}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {latestGas.readings.map(r => (
@@ -255,6 +256,22 @@ export function PermitDetailDrawer() {
                     </div>
                   ))}
                 </div>
+                {gasRecords.length > 1 && (
+                  <div className="mt-3 border-t border-surface-border/60 pt-2">
+                    <div className="text-2xs text-gray-600 uppercase tracking-wider font-bold mb-2">
+                      Test History ({gasRecords.length} total)
+                    </div>
+                    <div className="space-y-1 max-h-48 overflow-y-auto">
+                      {gasRecords.slice(0, -1).reverse().map(rec => (
+                        <div key={rec.id} className="flex items-center gap-3 px-2 py-1.5 rounded bg-surface-panel border border-surface-border/60 text-xs">
+                          <GasStatusBadge status={rec.overallStatus} size="sm" />
+                          <span className="font-mono text-gray-500 text-2xs">{formatDateTime(rec.testedAt)}</span>
+                          <span className="text-gray-600 text-2xs ml-auto">{rec.testedBy?.name ?? '—'}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-xs text-gray-600 italic">{t.permitDetail.noGasTest}</p>
@@ -341,6 +358,28 @@ export function PermitDetailDrawer() {
                 Refer Back
               </Button>
             </div>
+          </div>
+        )}
+
+        {/* Rejected: allow requester to reset to DRAFT and revise */}
+        {permit.status === 'REJECTED' && canSubmit && (
+          <div className="mb-4 p-4 rounded border border-red-800/60 bg-red-950/20">
+            <div className="text-2xs font-bold uppercase tracking-widest text-red-400 mb-2">
+              Permit Rejected
+            </div>
+            <p className="text-xs text-gray-400 mb-3 leading-relaxed">
+              This permit was rejected by the reviewer. Address the comments above, then reset it
+              to Draft to make changes and re-submit for approval.
+            </p>
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={Send}
+              loading={acting}
+              onClick={() => changeStatus('DRAFT', `Permit ${permit.permitNumber} reset to Draft for revision.`)}
+            >
+              Revise &amp; Re-submit
+            </Button>
           </div>
         )}
 
