@@ -83,31 +83,37 @@ export function HandoverPage() {
   const conflictCount   = conflicts.length;
 
   const handleCompleteHandover = async () => {
+    if (!incomingId) {
+      showToast('Please select an incoming supervisor.', 'error');
+      return;
+    }
     setSigningOff(true);
     try {
-      await fetch('/api/audit', {
+      const res = await fetch('/api/handover', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'SHIFT_HANDOVER_COMPLETED',
-          entity: 'SYSTEM',
-          entityId: 'system',
-          entityRef: 'SHIFT-HANDOVER',
-          performedById: currentUser.id,
-          metadata: {
-            outgoingSupervisor: currentUser.name,
-            incomingSupervisor: incomingSupervisors.find(u => u.id === incomingId)?.name ?? incomingId,
-            activePermits,
-            suspendedPermits: suspendedCount,
-            gasAlerts: gasAlertsCount,
-            notes,
-          },
+          outgoingSupervisorId: currentUser.id,
+          incomingSupervisorId: incomingId,
+          activePermitCount:    activePermits,
+          suspendedCount,
+          gasAlertCount:        gasAlertsCount,
+          simopsConflictCount:  conflictCount,
+          workerCount:          24,
+          incidentCount:        0,
+          notes,
+          shift: 'DAY',
         }),
       });
-      setSignedOff(true);
-      showToast('Shift handover completed and signed off. Incoming supervisor notified.', 'success');
+      if (res.ok) {
+        setSignedOff(true);
+        showToast('Shift handover completed and signed off. Incoming supervisor notified.', 'success');
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showToast(err.error || 'Failed to complete handover.', 'error');
+      }
     } catch {
-      showToast('Failed to complete handover. Please try again.', 'error');
+      showToast('Network error. Please try again.', 'error');
     } finally {
       setSigningOff(false);
     }

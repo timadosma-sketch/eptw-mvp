@@ -159,6 +159,8 @@ model User {
   simoConflictsRaised    SIMOPSConflict[]       @relation("RaisedBy")
   simoConflictsResolved  SIMOPSConflict[]       @relation("ResolvedBy")
   auditEntries           AuditEntry[]
+  handoversOutgoing      ShiftHandover[]        @relation("OutgoingHandover")
+  handoversIncoming      ShiftHandover[]        @relation("IncomingHandover")
 
   @@index([role])
   @@index([email])
@@ -455,4 +457,25 @@ model Alert {
   @@index([severity])
   @@index([createdAt(sort: Desc)])
   @@map("alerts")
+}
+
+model ShiftHandover {
+  id                  String   @id @default(cuid())
+  shiftDate           DateTime @default(now())
+  shift               String   @default("DAY")  // DAY | NIGHT
+  outgoingSupervisorId String
+  outgoingSupervisor  User     @relation("OutgoingHandover", fields: [outgoingSupervisorId], references: [id])
+  incomingSupervisorId String
+  incomingSupervisor  User     @relation("IncomingHandover", fields: [incomingSupervisorId], references: [id])
+  activePermitCount   Int      @default(0)
+  suspendedCount      Int      @default(0)
+  gasAlertCount       Int      @default(0)
+  simopsConflictCount Int      @default(0)
+  workerCount         Int      @default(0)
+  incidentCount       Int      @default(0)
+  notes               String   @default("") @db.Text
+  completedAt         DateTime @default(now())
+
+  @@index([shiftDate(sort: Desc)])
+  @@map("shift_handovers")
 }
