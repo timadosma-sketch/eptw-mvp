@@ -48,5 +48,12 @@
     "deploymentEnabled": {
       "main": true
     }
-  }
+  },
+
+  "crons": [
+    {
+      "path": "/api/permits/expire",
+      "schedule": "0 * * * *"
+    }
+  ]
 }
