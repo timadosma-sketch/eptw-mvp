@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import {
-  MapPin, Wind, AlertTriangle, CheckCircle2, XCircle, Paperclip, Send, Download, PlayCircle, Ban,
+  MapPin, Wind, AlertTriangle, CheckCircle2, XCircle, Paperclip, Send, Download, PlayCircle, Ban, Pencil, Save,
 } from 'lucide-react';
 import { Drawer } from '@/components/shared/Modal';
 import { PermitStatusBadge, RiskBadge, GasStatusBadge } from '@/components/shared/StatusBadge';
@@ -57,10 +57,19 @@ export function PermitDetailDrawer() {
   const [exporting, setExporting] = useState(false);
   const [approvalId, setApprovalId] = useState<string | null>(null);
   const [approvalComments, setApprovalComments] = useState('');
+  const [editing,   setEditing]   = useState(false);
+  const [editFields, setEditFields] = useState<Partial<{
+    title: string; description: string; location: string;
+    unit: string; area: string; equipment: string;
+    validFrom: string; validTo: string; workerCount: number;
+    simopsZone: string; notes: string;
+  }>>({});
 
   useEffect(() => {
     if (!selectedPermitId || !permitDetailOpen) return;
     setPermit(null);
+    setEditing(false);
+    setEditFields({});
 
     fetch(`/api/permits/${selectedPermitId}`)
       .then(r => r.ok ? r.json() : null)
@@ -160,6 +169,52 @@ export function PermitDetailDrawer() {
     changeStatus('CANCELLED', `Permit ${permit.permitNumber} cancelled.`);
   };
 
+  const startEditing = () => {
+    setEditFields({
+      title:       permit.title,
+      description: permit.description,
+      location:    permit.location,
+      unit:        permit.unit,
+      area:        permit.area,
+      equipment:   permit.equipment,
+      validFrom:   permit.validFrom.slice(0, 16),  // datetime-local format
+      validTo:     permit.validTo.slice(0, 16),
+      workerCount: permit.workerCount,
+      simopsZone:  permit.simopsZone ?? '',
+      notes:       permit.notes ?? '',
+    });
+    setEditing(true);
+  };
+
+  const handleSaveEdit = async () => {
+    setActing(true);
+    try {
+      const res = await fetch(`/api/permits/${permit.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...editFields,
+          validFrom: editFields.validFrom ? new Date(editFields.validFrom).toISOString() : undefined,
+          validTo:   editFields.validTo   ? new Date(editFields.validTo).toISOString()   : undefined,
+          workerCount: Number(editFields.workerCount),
+        }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setPermit(updated);
+        setEditing(false);
+        showToast('Permit updated successfully.', 'success');
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showToast(err.error || 'Failed to save changes.', 'error');
+      }
+    } catch {
+      showToast('Network error. Please try again.', 'error');
+    } finally {
+      setActing(false);
+    }
+  };
+
   const handleExportPDF = async () => {
     if (!permit) return;
     setExporting(true);
@@ -189,30 +244,132 @@ export function PermitDetailDrawer() {
           )}
         </div>
 
+        {/* Edit mode header bar */}
+        {permit.status === 'DRAFT' && canSubmit && (
+          <div className="flex items-center gap-2 mb-4">
+            {!editing ? (
+              <Button variant="ghost" size="xs" icon={Pencil} onClick={startEditing}>
+                Edit Permit
+              </Button>
+            ) : (
+              <>
+                <Button variant="primary" size="xs" icon={Save} loading={acting} onClick={handleSaveEdit}>
+                  Save Changes
+                </Button>
+                <Button variant="ghost" size="xs" onClick={() => setEditing(false)}>
+                  Cancel
+                </Button>
+              </>
+            )}
+          </div>
+        )}
+
         <Section title={t.permitDetail.workDescription}>
-          <div className="text-sm font-semibold text-white mb-2">{permit.title}</div>
-          <div className="text-xs text-gray-400 leading-relaxed">{permit.description}</div>
+          {editing ? (
+            <div className="space-y-2">
+              <input
+                value={editFields.title ?? ''}
+                onChange={e => setEditFields(f => ({ ...f, title: e.target.value }))}
+                className="w-full text-sm font-semibold bg-surface-panel border border-brand/40 rounded px-3 py-2 text-white focus:outline-none focus:border-brand"
+                placeholder="Permit title"
+              />
+              <textarea
+                rows={3}
+                value={editFields.description ?? ''}
+                onChange={e => setEditFields(f => ({ ...f, description: e.target.value }))}
+                className="w-full text-xs bg-surface-panel border border-surface-border rounded px-3 py-2 text-gray-200 focus:outline-none focus:border-brand/60 resize-none"
+                placeholder="Work description"
+              />
+            </div>
+          ) : (
+            <>
+              <div className="text-sm font-semibold text-white mb-2">{permit.title}</div>
+              <div className="text-xs text-gray-400 leading-relaxed">{permit.description}</div>
+            </>
+          )}
         </Section>
 
         <Section title={t.permitDetail.permitDetails}>
-          <InfoRow label={t.permitDetail.location}   value={<span className="flex items-center gap-1.5"><MapPin className="w-3 h-3 text-gray-600" />{permit.location}</span>} />
-          <InfoRow label={t.permitDetail.unitArea}   value={`${permit.unit} · ${permit.area}`} />
-          <InfoRow label={t.permitDetail.equipment}  value={permit.equipment} />
-          <InfoRow label={t.permitDetail.validFrom}  value={<span className="font-mono">{formatDateTime(permit.validFrom)}</span>} />
-          <InfoRow label={t.permitDetail.validTo}    value={<span className="font-mono">{formatDateTime(permit.validTo)}</span>} />
-          <InfoRow label={t.permitDetail.simopsZone} value={<span className="font-mono">{permit.simopsZone || '—'}</span>} />
-          <InfoRow label="QR / Deep Link" value={
-            <button
-              className="text-brand hover:underline font-mono text-xs"
-              onClick={() => {
-                const url = `${window.location.origin}/permits?open=${permit.id}`;
-                navigator.clipboard.writeText(url).then(() => showToast('Permit link copied to clipboard.', 'info'));
-              }}
-            >
-              {permit.qrCode} ↗
-            </button>
-          } />
-          <InfoRow label={t.permitDetail.workers}    value={`${permit.workerCount} ${t.common.persons}`} />
+          {editing ? (
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              {[
+                { label: t.permitDetail.location, field: 'location' as const, placeholder: 'Location' },
+                { label: t.permitDetail.equipment, field: 'equipment' as const, placeholder: 'Equipment tag' },
+                { label: 'Unit', field: 'unit' as const, placeholder: 'Unit' },
+                { label: 'Area', field: 'area' as const, placeholder: 'Area' },
+                { label: t.permitDetail.simopsZone, field: 'simopsZone' as const, placeholder: 'SIMOPS zone' },
+              ].map(({ label, field, placeholder }) => (
+                <div key={field}>
+                  <label className="text-2xs text-gray-600 block mb-1">{label}</label>
+                  <input
+                    value={editFields[field] ?? ''}
+                    onChange={e => setEditFields(f => ({ ...f, [field]: e.target.value }))}
+                    placeholder={placeholder}
+                    className="w-full bg-surface-panel border border-surface-border rounded px-2 py-1.5 text-gray-200 focus:outline-none focus:border-brand/60"
+                  />
+                </div>
+              ))}
+              <div>
+                <label className="text-2xs text-gray-600 block mb-1">Workers on Site</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={editFields.workerCount ?? 1}
+                  onChange={e => setEditFields(f => ({ ...f, workerCount: parseInt(e.target.value) || 1 }))}
+                  className="w-full bg-surface-panel border border-surface-border rounded px-2 py-1.5 text-gray-200 focus:outline-none focus:border-brand/60"
+                />
+              </div>
+              <div>
+                <label className="text-2xs text-gray-600 block mb-1">{t.permitDetail.validFrom}</label>
+                <input
+                  type="datetime-local"
+                  value={editFields.validFrom ?? ''}
+                  onChange={e => setEditFields(f => ({ ...f, validFrom: e.target.value }))}
+                  className="w-full bg-surface-panel border border-surface-border rounded px-2 py-1.5 text-gray-200 focus:outline-none focus:border-brand/60"
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="text-2xs text-gray-600 block mb-1">{t.permitDetail.validTo}</label>
+                <input
+                  type="datetime-local"
+                  value={editFields.validTo ?? ''}
+                  onChange={e => setEditFields(f => ({ ...f, validTo: e.target.value }))}
+                  className="w-full bg-surface-panel border border-surface-border rounded px-2 py-1.5 text-gray-200 focus:outline-none focus:border-brand/60"
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="text-2xs text-gray-600 block mb-1">Notes</label>
+                <textarea
+                  rows={2}
+                  value={editFields.notes ?? ''}
+                  onChange={e => setEditFields(f => ({ ...f, notes: e.target.value }))}
+                  className="w-full bg-surface-panel border border-surface-border rounded px-2 py-1.5 text-gray-200 focus:outline-none focus:border-brand/60 resize-none"
+                  placeholder="Additional notes..."
+                />
+              </div>
+            </div>
+          ) : (
+            <>
+              <InfoRow label={t.permitDetail.location}   value={<span className="flex items-center gap-1.5"><MapPin className="w-3 h-3 text-gray-600" />{permit.location}</span>} />
+              <InfoRow label={t.permitDetail.unitArea}   value={`${permit.unit} · ${permit.area}`} />
+              <InfoRow label={t.permitDetail.equipment}  value={permit.equipment} />
+              <InfoRow label={t.permitDetail.validFrom}  value={<span className="font-mono">{formatDateTime(permit.validFrom)}</span>} />
+              <InfoRow label={t.permitDetail.validTo}    value={<span className="font-mono">{formatDateTime(permit.validTo)}</span>} />
+              <InfoRow label={t.permitDetail.simopsZone} value={<span className="font-mono">{permit.simopsZone || '—'}</span>} />
+              <InfoRow label="QR / Deep Link" value={
+                <button
+                  className="text-brand hover:underline font-mono text-xs"
+                  onClick={() => {
+                    const url = `${window.location.origin}/permits?open=${permit.id}`;
+                    navigator.clipboard.writeText(url).then(() => showToast('Permit link copied to clipboard.', 'info'));
+                  }}
+                >
+                  {permit.qrCode} ↗
+                </button>
+              } />
+              <InfoRow label={t.permitDetail.workers}    value={`${permit.workerCount} ${t.common.persons}`} />
+            </>
+          )}
         </Section>
 
         <Section title={t.permitDetail.responsibilities}>
