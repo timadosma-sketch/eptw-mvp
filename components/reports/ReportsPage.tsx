@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BarChart2, Download } from 'lucide-react';
+import { BarChart2, Download, Loader2 } from 'lucide-react';
 import { PageShell, SectionHeader } from '@/components/shared/PageShell';
 import { KPICard } from '@/components/shared/KPICard';
 import { Button } from '@/components/shared/Button';
+import { useAppStore } from '@/lib/store/useAppStore';
 import { useT } from '@/lib/i18n/useT';
 import { MOCK_PERMITS } from '@/lib/mock/permits';
 import { PERMIT_TYPE_CONFIG, PERMIT_STATUS_CONFIG } from '@/lib/constants';
-import type { PermitType, PermitStatus } from '@/lib/types';
+import { downloadDailyReport, downloadWeeklySummary, downloadAuditTrail } from './ReportPDF';
+import type { PermitType, PermitStatus, Permit, AuditEntry } from '@/lib/types';
 
 function BarRow({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
   const pct = max > 0 ? (value / max) * 100 : 0;
@@ -25,7 +27,9 @@ function BarRow({ label, value, max, color }: { label: string; value: number; ma
 
 export function ReportsPage() {
   const { t } = useT();
-  const [permits, setPermits] = useState(MOCK_PERMITS);
+  const showToast = useAppStore(s => s.showToast);
+  const [permits, setPermits] = useState<Permit[]>(MOCK_PERMITS);
+  const [exporting, setExporting] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/permits?pageSize=200')
@@ -51,13 +55,38 @@ export function ReportsPage() {
     WORK_AT_HEIGHT: 'bg-cyan-600',
   };
 
+  const handleExport = async (id: string) => {
+    setExporting(id);
+    try {
+      if (id === 'daily') {
+        await downloadDailyReport(permits);
+        showToast('Daily Permit Report exported.', 'success');
+      } else if (id === 'weekly') {
+        await downloadWeeklySummary(permits);
+        showToast('Weekly Safety Summary exported.', 'success');
+      } else if (id === 'audit') {
+        const res = await fetch('/api/audit?pageSize=500');
+        const json = res.ok ? await res.json() : null;
+        const entries: AuditEntry[] = json?.data ?? [];
+        await downloadAuditTrail(entries);
+        showToast('Audit Trail exported.', 'success');
+      } else {
+        showToast('This report type is coming soon.', 'info');
+      }
+    } catch {
+      showToast('Export failed. Please try again.', 'error');
+    } finally {
+      setExporting(null);
+    }
+  };
+
   const REPORT_TEMPLATES = [
-    { id: 'daily',     label: 'Daily Permit Report',         desc: 'All permits issued/closed today',      format: 'PDF' },
-    { id: 'weekly',    label: 'Weekly Safety Summary',       desc: 'KPIs, gas tests, incidents — 7 days',  format: 'PDF' },
-    { id: 'gas',       label: 'Gas Test Compliance Report',  desc: 'All test records with pass/fail trend', format: 'XLSX' },
-    { id: 'isolation', label: 'Isolation Certificate Log',   desc: 'All isolation certs — current period',  format: 'PDF' },
-    { id: 'audit',     label: 'Audit Trail Export',          desc: 'Full tamper-evident log export',        format: 'PDF' },
-    { id: 'hse',       label: 'HSE KPI Dashboard',          desc: 'Incident rates, safety scores',         format: 'PDF' },
+    { id: 'daily',     label: 'Daily Permit Report',         desc: 'All permits issued/closed today',       format: 'PDF', live: true  },
+    { id: 'weekly',    label: 'Weekly Safety Summary',       desc: 'KPIs, gas tests, incidents — 7 days',   format: 'PDF', live: true  },
+    { id: 'gas',       label: 'Gas Test Compliance Report',  desc: 'All test records with pass/fail trend',  format: 'XLSX', live: false },
+    { id: 'isolation', label: 'Isolation Certificate Log',   desc: 'All isolation certs — current period',  format: 'PDF', live: false },
+    { id: 'audit',     label: 'Audit Trail Export',          desc: 'Full tamper-evident log export',         format: 'PDF', live: true  },
+    { id: 'hse',       label: 'HSE KPI Dashboard',           desc: 'Incident rates, safety scores',          format: 'PDF', live: false },
   ];
 
   return (
@@ -120,11 +149,22 @@ export function ReportsPage() {
             {REPORT_TEMPLATES.map(r => (
               <div key={r.id} className="flex items-start justify-between gap-3 p-4 rounded-md border border-surface-border bg-surface-card hover:bg-surface-hover transition-colors">
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold text-white">{r.label}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm font-semibold text-white">{r.label}</div>
+                    {r.live && (
+                      <span className="text-2xs px-1 py-0.5 rounded bg-emerald-900/50 text-emerald-400 border border-emerald-800 font-mono">LIVE</span>
+                    )}
+                  </div>
                   <div className="text-xs text-gray-500 mt-0.5">{r.desc}</div>
                   <div className="text-2xs font-mono text-brand mt-1">{r.format}</div>
                 </div>
-                <Button variant="ghost" size="xs" icon={Download}>
+                <Button
+                  variant={r.live ? 'secondary' : 'ghost'}
+                  size="xs"
+                  icon={exporting === r.id ? Loader2 : Download}
+                  loading={exporting === r.id}
+                  onClick={() => handleExport(r.id)}
+                >
                   {t.common.export}
                 </Button>
               </div>

@@ -380,8 +380,11 @@ export interface AuditEntry {
 
 export interface AuditChange {
   field: string;
-  oldValue: unknown;
-  newValue: unknown;
+  oldValue?: unknown;
+  newValue?: unknown;
+  // Shorthand aliases accepted from API callers
+  from?: unknown;
+  to?: unknown;
 }
 
 // ----------------------------------------------------------
