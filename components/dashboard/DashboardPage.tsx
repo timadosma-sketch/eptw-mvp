@@ -22,6 +22,7 @@ import { PERMIT_TYPE_CONFIG } from '@/lib/constants';
 import { formatDateTime, getTimeRemaining, truncate } from '@/lib/utils/formatters';
 import { formatRelative } from '@/lib/utils/formatters';
 import type { Permit, GasTestRecord, DashboardMetrics, AuditEntry } from '@/lib/types';
+import type { DayTrend } from '@/lib/dal/dashboard.dal';
 
 function usePermitColumns(onView: (id: string) => void, t: ReturnType<typeof useT>['t']): Column<Permit>[] {
   return [
@@ -97,12 +98,16 @@ export function DashboardPage() {
   const [allPermits, setAllPermits] = useState<Permit[]>(MOCK_PERMITS);
   const [gasRecords, setGasRecords] = useState<GasTestRecord[]>(MOCK_GAS_RECORDS);
   const [recentActivity, setRecentActivity] = useState<AuditEntry[]>([]);
+  const [trend, setTrend] = useState<DayTrend[]>([]);
 
   useEffect(() => {
     const load = () => {
       fetch('/api/dashboard')
         .then(r => r.ok ? r.json() : null)
-        .then(d => { if (d?.metrics) setM(d.metrics); })
+        .then(d => {
+          if (d?.metrics) setM(d.metrics);
+          if (d?.trend)   setTrend(d.trend);
+        })
         .catch(() => {});
       fetch('/api/permits?pageSize=50')
         .then(r => r.ok ? r.json() : null)
@@ -195,6 +200,38 @@ export function DashboardPage() {
           <KPICard label={t.dashboard.daysWithoutIncident}  value={m.daysWithoutIncident}  icon={Activity}    variant="success" />
           <KPICard label={t.dashboard.mttr}                 value={`${m.mttrMinutes}m`}    icon={TrendingUp}  variant="info"    />
         </div>
+
+        {/* 7-day permit trend */}
+        {trend.length > 0 && (
+          <div>
+            <SectionHeader title="7-DAY PERMIT TREND" subtitle="Permits created, closed, and active each day" />
+            <div className="p-4 rounded-md border border-surface-border bg-surface-card">
+              <div className="flex items-end gap-1 h-20">
+                {trend.map((day, i) => {
+                  const maxVal = Math.max(...trend.map(d => d.active), 1);
+                  const activeH = Math.round((day.active / maxVal) * 72);
+                  const createdH = Math.round((day.created / Math.max(...trend.map(d => d.created), 1)) * 40);
+                  const closedH  = Math.round((day.closed  / Math.max(...trend.map(d => d.closed), 1)) * 40);
+                  return (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-0.5" title={`${day.date}: ${day.active} active, ${day.created} created, ${day.closed} closed`}>
+                      <div className="w-full flex items-end justify-center gap-0.5">
+                        <div className="w-1/3 bg-brand/60 rounded-t" style={{ height: `${createdH}px`, minHeight: day.created > 0 ? '3px' : '0' }} />
+                        <div className="w-1/3 bg-emerald-500/60 rounded-t" style={{ height: `${activeH}px`, minHeight: day.active > 0 ? '3px' : '0' }} />
+                        <div className="w-1/3 bg-gray-500/60 rounded-t" style={{ height: `${closedH}px`, minHeight: day.closed > 0 ? '3px' : '0' }} />
+                      </div>
+                      <span className="text-2xs text-gray-600 font-mono truncate w-full text-center">{day.date.split(' ')[0]}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex items-center gap-4 mt-3 text-2xs text-gray-500">
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-brand/60 inline-block" /> Created</span>
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-500/60 inline-block" /> Active</span>
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-gray-500/60 inline-block" /> Closed</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tables */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">

@@ -84,6 +84,38 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
   };
 }
 
+export interface DayTrend {
+  date: string;  // "dd MMM"
+  created: number;
+  closed: number;
+  active: number;
+}
+
+export async function getPermitTrend(days = 7): Promise<DayTrend[]> {
+  const trend: DayTrend[] = [];
+  const now = new Date();
+
+  for (let i = days - 1; i >= 0; i--) {
+    const dayStart = new Date(now);
+    dayStart.setDate(dayStart.getDate() - i);
+    dayStart.setHours(0, 0, 0, 0);
+
+    const dayEnd = new Date(dayStart);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    const [created, closed, active] = await Promise.all([
+      db.permit.count({ where: { createdAt: { gte: dayStart, lte: dayEnd } } }),
+      db.permit.count({ where: { status: { in: ['CLOSED', 'EXPIRED', 'CANCELLED'] }, updatedAt: { gte: dayStart, lte: dayEnd } } }),
+      db.permit.count({ where: { status: 'ACTIVE', createdAt: { lte: dayEnd } } }),
+    ]);
+
+    const label = dayStart.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+    trend.push({ date: label, created, closed, active });
+  }
+
+  return trend;
+}
+
 export async function getDashboardAlerts(): Promise<Alert[]> {
   const rows = await db.alert.findMany({
     where: {

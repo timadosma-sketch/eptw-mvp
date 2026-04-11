@@ -15,7 +15,7 @@ import { MOCK_PERMITS } from '@/lib/mock/permits';
 import { PERMIT_TYPE_CONFIG, PERMIT_STATUS_CONFIG } from '@/lib/constants';
 import { formatDateTime, getTimeRemaining, truncate } from '@/lib/utils/formatters';
 import { cn } from '@/lib/utils/cn';
-import type { Permit, PermitStatus, PermitType } from '@/lib/types';
+import type { Permit, PermitStatus, PermitType, RiskLevel } from '@/lib/types';
 
 const STATUS_FILTERS: PermitStatus[] = [
   'ACTIVE', 'APPROVED', 'UNDER_REVIEW', 'SUBMITTED', 'SUSPENDED', 'DRAFT', 'CLOSED', 'REJECTED', 'EXPIRED', 'CANCELLED',
@@ -41,6 +41,7 @@ export function PermitsPage() {
   const [search,   setSearch]   = useState('');
   const [statusF,  setStatusF]  = useState<PermitStatus | ''>('');
   const [typeF,    setTypeF]    = useState<PermitType | ''>('');
+  const [riskF,    setRiskF]    = useState<RiskLevel | ''>('');
   const [permits,  setPermits]  = useState<Permit[]>(MOCK_PERMITS);
 
   useEffect(() => {
@@ -59,6 +60,7 @@ export function PermitsPage() {
     return permits.filter(p => {
       if (statusF && p.status !== statusF) return false;
       if (typeF   && p.type   !== typeF)   return false;
+      if (riskF   && p.riskLevel !== riskF) return false;
       if (search) {
         const q = search.toLowerCase();
         return (
@@ -69,7 +71,7 @@ export function PermitsPage() {
       }
       return true;
     });
-  }, [search, statusF, typeF, permits]);
+  }, [search, statusF, typeF, riskF, permits]);
 
   const columns: Column<Permit>[] = [
     {
@@ -195,12 +197,23 @@ export function PermitsPage() {
             ))}
           </select>
 
-          {(search || statusF || typeF) && (
+          <select
+            value={riskF}
+            onChange={e => setRiskF(e.target.value as RiskLevel | '')}
+            className="text-xs bg-surface-panel border border-surface-border rounded px-3 py-2 text-gray-300 focus:outline-none focus:border-brand/60"
+          >
+            <option value="">All Risk Levels</option>
+            {(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] as RiskLevel[]).map(r => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+
+          {(search || statusF || typeF || riskF) && (
             <Button
               variant="ghost"
               size="sm"
               icon={RefreshCw}
-              onClick={() => { setSearch(''); setStatusF(''); setTypeF(''); }}
+              onClick={() => { setSearch(''); setStatusF(''); setTypeF(''); setRiskF(''); }}
             >
               {t.common.clear}
             </Button>
