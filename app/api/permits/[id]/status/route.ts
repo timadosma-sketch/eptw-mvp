@@ -20,7 +20,7 @@ const STATUS_AUDIT_ACTION: Partial<Record<string, string>> = {
 const VALID_TRANSITIONS: Partial<Record<PermitStatus, PermitStatus[]>> = {
   DRAFT:        ['SUBMITTED', 'CANCELLED'],
   SUBMITTED:    ['UNDER_REVIEW', 'APPROVED', 'REJECTED', 'DRAFT', 'CANCELLED'],
-  UNDER_REVIEW: ['APPROVED', 'REJECTED', 'DRAFT'],  // DRAFT = referred back
+  UNDER_REVIEW: ['APPROVED', 'REJECTED', 'DRAFT', 'CANCELLED'],  // DRAFT = referred back
   APPROVED:     ['ACTIVE', 'CANCELLED'],
   ACTIVE:       ['SUSPENDED', 'CLOSED', 'CANCELLED'],
   SUSPENDED:    ['ACTIVE', 'CANCELLED', 'CLOSED'],
