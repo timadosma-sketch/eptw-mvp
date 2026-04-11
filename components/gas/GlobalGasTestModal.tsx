@@ -15,6 +15,7 @@ export function GlobalGasTestModal() {
   const closeModal      = useAppStore(s => s.closeGasTestModal);
   const showToast       = useAppStore(s => s.showToast);
   const currentUser     = useAppStore(s => s.currentUser);
+  const bumpDataVersion = useAppStore(s => s.bumpDataVersion);
 
   const [permitNumber, setPermitNumber] = useState('');
   const [location,     setLocation]     = useState('');
@@ -72,6 +73,7 @@ export function GlobalGasTestModal() {
         `Gas test recorded for ${permitNumber} — ${status}`,
         status === 'SAFE' ? 'success' : status === 'WARNING' ? 'warning' : 'error',
       );
+      bumpDataVersion();
       closeModal();
     } catch {
       setError('Failed to submit gas test. Please try again.');

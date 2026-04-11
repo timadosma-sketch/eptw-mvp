@@ -33,10 +33,11 @@ const QUICK_MATRIX: Partial<Record<PermitType, Partial<Record<PermitType, SIMOPS
 
 export function SimopsPage() {
   const { t } = useT();
-  const showToast   = useAppStore(s => s.showToast);
-  const currentUser = useAppStore(s => s.currentUser);
-  const dataVersion = useAppStore(s => s.dataVersion);
-  const canControl  = rbac.canControlPermit(currentUser?.role);
+  const showToast       = useAppStore(s => s.showToast);
+  const currentUser     = useAppStore(s => s.currentUser);
+  const dataVersion     = useAppStore(s => s.dataVersion);
+  const bumpDataVersion = useAppStore(s => s.bumpDataVersion);
+  const canControl      = rbac.canControlPermit(currentUser?.role);
   const [conflicts, setConflicts] = useState(MOCK_SIMOPS_CONFLICTS);
   const [resolving, setResolving] = useState<string | null>(null);
 
@@ -66,6 +67,7 @@ export function SimopsPage() {
       if (res.ok) {
         showToast('SIMOPS conflict resolved.', 'success');
         loadConflicts();
+        bumpDataVersion();
       } else {
         showToast('Failed to resolve conflict.', 'error');
       }
@@ -166,6 +168,28 @@ export function SimopsPage() {
 
         {activeConflicts.length === 0 && (
           <p className="text-xs text-gray-600 italic">{t.simops.noConflicts}</p>
+        )}
+
+        {resolvedConflicts.length > 0 && (
+          <div>
+            <SectionHeader title="Resolved Conflicts" subtitle={`${resolvedConflicts.length} resolved this period`} />
+            <div className="space-y-2">
+              {resolvedConflicts.map(conflict => (
+                <div key={conflict.id} className="flex items-center gap-4 px-4 py-3 rounded border border-surface-border bg-surface-card text-xs">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="font-mono text-brand">{conflict.permitANumber}</span>
+                    <span className="text-gray-600">↔</span>
+                    <span className="font-mono text-brand">{conflict.permitBNumber}</span>
+                    <span className="text-gray-600">·</span>
+                    <span className="text-gray-500">{conflict.zone}</span>
+                  </div>
+                  <div className="flex-1 text-gray-500 truncate">{conflict.resolution}</div>
+                  <span className="text-2xs text-gray-600 flex-shrink-0">{formatRelative(conflict.raisedAt)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
 
         <div>

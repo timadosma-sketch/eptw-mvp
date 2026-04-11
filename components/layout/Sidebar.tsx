@@ -83,6 +83,7 @@ export function Sidebar() {
   const collapsed      = useAppStore(s => s.sidebarCollapsed);
   const toggleSidebar  = useAppStore(s => s.toggleSidebar);
   const currentUser    = useAppStore(s => s.currentUser);
+  const dataVersion    = useAppStore(s => s.dataVersion);
   const { t }          = useT();
 
   const [counts, setCounts] = useState<DashboardCounts>({
@@ -111,7 +112,8 @@ export function Sidebar() {
     fetchCounts();
     const interval = setInterval(fetchCounts, 60_000);
     return () => clearInterval(interval);
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataVersion]);
 
   const { activePermits, pendingApprovals, gasAlerts, simoConflicts } = counts;
 
