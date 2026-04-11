@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getApprovals, getPendingApprovals } from '@/lib/dal/approvals.dal';
+import { getApprovals, getPendingApprovals, getApprovalsByPermit } from '@/lib/dal/approvals.dal';
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const pending = searchParams.get('pending') === 'true';
+    const pending  = searchParams.get('pending')  === 'true';
+    const permitId = searchParams.get('permitId');
+
+    // Lookup by specific permit
+    if (permitId) {
+      const data = await getApprovalsByPermit(permitId);
+      return NextResponse.json({ data, total: data.length });
+    }
 
     if (pending) {
       const data = await getPendingApprovals();

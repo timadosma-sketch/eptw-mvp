@@ -48,12 +48,15 @@ export function PermitDetailDrawer() {
   const canSubmit  = rbac.canCreatePermit(currentUser?.role);
   const canControl = rbac.canControlPermit(currentUser?.role);
   const canGasTest = rbac.canRecordGasTest(currentUser?.role);
+  const canApprove = rbac.canApprove(currentUser?.role);
 
   const [permit,    setPermit]    = useState<Permit | null>(null);
   const [isolation, setIsolation] = useState<IsolationCertificate | null>(null);
   const [gasRecords, setGasRecords] = useState<GasTestRecord[]>([]);
   const [acting,    setActing]    = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [approvalId, setApprovalId] = useState<string | null>(null);
+  const [approvalComments, setApprovalComments] = useState('');
 
   useEffect(() => {
     if (!selectedPermitId || !permitDetailOpen) return;
@@ -73,6 +76,16 @@ export function PermitDetailDrawer() {
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d?.data) setGasRecords(d.data); else setGasRecords([]); })
       .catch(() => {});
+
+    // Fetch open approval record for UNDER_REVIEW permits
+    fetch(`/api/approvals?permitId=${selectedPermitId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        const open = d?.data?.find((a: { decision: unknown }) => !a.decision);
+        setApprovalId(open?.id ?? null);
+      })
+      .catch(() => {});
+    setApprovalComments('');
   }, [selectedPermitId, permitDetailOpen]);
 
   if (!permit) return null;
@@ -104,6 +117,31 @@ export function PermitDetailDrawer() {
 
   const handleSuspend = () => changeStatus('SUSPENDED', 'Permit suspended. All workers notified.');
   const handleClose   = () => changeStatus('CLOSED',    'Permit closed successfully.');
+
+  const handleApprovalDecision = async (decision: 'APPROVED' | 'REJECTED' | 'REFERRED_BACK') => {
+    if (!approvalId) return;
+    setActing(true);
+    try {
+      const res = await fetch(`/api/approvals/${approvalId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ decision, comments: approvalComments }),
+      });
+      if (res.ok) {
+        const msg = decision === 'APPROVED'      ? 'Permit approved — requester notified.'
+                  : decision === 'REJECTED'      ? 'Permit rejected — requester notified.'
+                  : 'Permit referred back for revision.';
+        showToast(msg, decision === 'APPROVED' ? 'success' : decision === 'REJECTED' ? 'error' : 'warning');
+        closePermitDetail();
+      } else {
+        showToast('Action failed. Please try again.', 'error');
+      }
+    } catch {
+      showToast('Network error.', 'error');
+    } finally {
+      setActing(false);
+    }
+  };
   const handleCancel  = () => {
     const reason = window.prompt('Reason for cancellation (required):');
     if (!reason?.trim()) return;
@@ -248,6 +286,39 @@ export function PermitDetailDrawer() {
           <Section title={t.permitDetail.notes}>
             <p className="text-xs text-gray-400 leading-relaxed">{permit.notes}</p>
           </Section>
+        )}
+
+        {/* Inline approval panel — only for UNDER_REVIEW permits + approvers */}
+        {permit.status === 'UNDER_REVIEW' && canApprove && approvalId && (
+          <div className="mb-4 p-4 rounded border border-yellow-800/60 bg-yellow-950/20">
+            <div className="text-2xs font-bold uppercase tracking-widest text-yellow-500 mb-3">
+              Awaiting Your Approval
+            </div>
+            <div className="mb-3">
+              <label className="text-xs text-gray-500 mb-1 block">Comments / Conditions</label>
+              <textarea
+                rows={2}
+                value={approvalComments}
+                onChange={e => setApprovalComments(e.target.value)}
+                placeholder="Enter approval comments, conditions, or rejection reason…"
+                className="w-full text-xs bg-surface-panel border border-surface-border rounded px-3 py-2 text-gray-200 placeholder-gray-600 focus:outline-none focus:border-brand/60 resize-none"
+              />
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button variant="success" size="sm" icon={CheckCircle2} loading={acting}
+                onClick={() => handleApprovalDecision('APPROVED')}>
+                Approve
+              </Button>
+              <Button variant="danger" size="sm" icon={XCircle} loading={acting}
+                onClick={() => handleApprovalDecision('REJECTED')}>
+                Reject
+              </Button>
+              <Button variant="warning" size="sm" loading={acting}
+                onClick={() => handleApprovalDecision('REFERRED_BACK')}>
+                Refer Back
+              </Button>
+            </div>
+          </div>
         )}
 
         {/* Export PDF — always available */}
