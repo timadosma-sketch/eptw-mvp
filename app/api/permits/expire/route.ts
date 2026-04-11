@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     const ids = expiredPermits.map(p => p.id);
     await db.permit.updateMany({
       where: { id: { in: ids } },
-      data:  { status: 'EXPIRED' as any },
+      data:  { status: 'EXPIRED' },
     });
 
     // Mark overdue approvals

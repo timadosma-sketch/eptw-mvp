@@ -20,7 +20,8 @@ import { MOCK_PERMITS } from '@/lib/mock/permits';
 import { MOCK_GAS_RECORDS } from '@/lib/mock/gas';
 import { PERMIT_TYPE_CONFIG } from '@/lib/constants';
 import { formatDateTime, getTimeRemaining, truncate } from '@/lib/utils/formatters';
-import type { Permit, GasTestRecord, DashboardMetrics } from '@/lib/types';
+import { formatRelative } from '@/lib/utils/formatters';
+import type { Permit, GasTestRecord, DashboardMetrics, AuditEntry } from '@/lib/types';
 
 function usePermitColumns(onView: (id: string) => void, t: ReturnType<typeof useT>['t']): Column<Permit>[] {
   return [
@@ -95,6 +96,7 @@ export function DashboardPage() {
   const [m, setM] = useState<DashboardMetrics>(MOCK_DASHBOARD_METRICS);
   const [allPermits, setAllPermits] = useState<Permit[]>(MOCK_PERMITS);
   const [gasRecords, setGasRecords] = useState<GasTestRecord[]>(MOCK_GAS_RECORDS);
+  const [recentActivity, setRecentActivity] = useState<AuditEntry[]>([]);
 
   useEffect(() => {
     const load = () => {
@@ -109,6 +111,10 @@ export function DashboardPage() {
       fetch('/api/gas-tests')
         .then(r => r.ok ? r.json() : null)
         .then(d => { if (d?.data) setGasRecords(d.data); })
+        .catch(() => {});
+      fetch('/api/audit?pageSize=10')
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d?.data) setRecentActivity(d.data); })
         .catch(() => {});
     };
     load();
@@ -229,6 +235,25 @@ export function DashboardPage() {
               ))}
           </div>
         </div>
+
+        {/* Recent activity feed */}
+        {recentActivity.length > 0 && (
+          <div>
+            <SectionHeader title="RECENT ACTIVITY" subtitle="Last 10 system events" />
+            <div className="space-y-1.5">
+              {recentActivity.map(e => (
+                <div key={e.id} className="flex items-center gap-3 px-3 py-2 rounded border border-surface-border/50 bg-surface-raised text-xs">
+                  <span className="w-2 h-2 rounded-full bg-brand flex-shrink-0" />
+                  <span className="font-mono text-gray-600 w-32 flex-shrink-0 text-2xs">{formatRelative(e.performedAt)}</span>
+                  <span className="font-semibold text-gray-300">{e.action.replace(/_/g, ' ')}</span>
+                  <span className="text-gray-600">·</span>
+                  <span className="font-mono text-brand text-2xs">{e.entityRef ?? '—'}</span>
+                  <span className="ml-auto text-gray-600 text-2xs">{e.performedBy?.name ?? '—'}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
