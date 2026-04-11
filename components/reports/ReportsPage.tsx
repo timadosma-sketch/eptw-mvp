@@ -27,7 +27,8 @@ function BarRow({ label, value, max, color }: { label: string; value: number; ma
 
 export function ReportsPage() {
   const { t } = useT();
-  const showToast = useAppStore(s => s.showToast);
+  const showToast   = useAppStore(s => s.showToast);
+  const dataVersion = useAppStore(s => s.dataVersion);
   const [permits, setPermits] = useState<Permit[]>(MOCK_PERMITS);
   const [exporting, setExporting] = useState<string | null>(null);
 
@@ -36,7 +37,7 @@ export function ReportsPage() {
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d?.data?.length) setPermits(d.data); })
       .catch(() => {});
-  }, []);
+  }, [dataVersion]);
 
   const byType: Record<PermitType, number> = {} as Record<PermitType, number>;
   const byStatus: Record<PermitStatus, number> = {} as Record<PermitStatus, number>;

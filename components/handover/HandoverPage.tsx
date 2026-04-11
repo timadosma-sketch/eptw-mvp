@@ -39,6 +39,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 export function HandoverPage() {
   const currentUser = useAppStore(s => s.currentUser);
   const showToast   = useAppStore(s => s.showToast);
+  const dataVersion = useAppStore(s => s.dataVersion);
   const { t } = useT();
 
   const [permits,   setPermits]   = useState(MOCK_PERMITS.filter(p => !['ARCHIVED','DRAFT'].includes(p.status)));
@@ -72,10 +73,11 @@ export function HandoverPage() {
           ['SITE_SUPERVISOR', 'ISSUING_AUTHORITY', 'PLANT_OPS_MANAGER'].includes(u.role) && u.id !== currentUser.id
         );
         setIncomingSupervisors(candidates);
-        if (candidates.length > 0) setIncomingId(candidates[0].id);
+        if (candidates.length > 0 && !incomingId) setIncomingId(candidates[0].id);
       })
       .catch(() => {});
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataVersion]);
 
   const activePermits   = permits.filter(p => p.status === 'ACTIVE').length;
   const suspendedCount  = permits.filter(p => p.status === 'SUSPENDED').length;

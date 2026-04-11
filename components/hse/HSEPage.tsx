@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ShieldCheck, TrendingUp, TrendingDown } from 'lucide-react';
 import { PageShell, SectionHeader } from '@/components/shared/PageShell';
+import { useAppStore } from '@/lib/store/useAppStore';
 import { useT } from '@/lib/i18n/useT';
 import { MOCK_DASHBOARD_METRICS } from '@/lib/mock/dashboard';
 
@@ -28,6 +29,7 @@ const HSE_KPIS = [
 
 export function HSEPage() {
   const { t } = useT();
+  const dataVersion = useAppStore(s => s.dataVersion);
   const [m, setM] = useState(MOCK_DASHBOARD_METRICS);
 
   useEffect(() => {
@@ -35,7 +37,7 @@ export function HSEPage() {
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d?.metrics) setM(d.metrics); })
       .catch(() => {});
-  }, []);
+  }, [dataVersion]);
 
   return (
     <PageShell title={t.hse.title} subtitle={t.hse.subtitle}>
