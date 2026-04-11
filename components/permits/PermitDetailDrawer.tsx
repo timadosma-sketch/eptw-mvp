@@ -257,6 +257,17 @@ export function PermitDetailDrawer() {
           </Button>
         </div>
 
+        {permit.status === 'SUSPENDED' && canControl && (
+          <div className="flex items-center gap-2 pt-2 border-t border-surface-border flex-wrap">
+            <Button variant="primary" size="sm" icon={PlayCircle} loading={acting} onClick={() => changeStatus('ACTIVE', `Permit ${permit.permitNumber} reinstated — work may resume.`)}>
+              Reinstate Permit
+            </Button>
+            <Button variant="success" size="sm" icon={CheckCircle2} loading={acting} onClick={handleClose}>
+              {t.permitDetail.closePermit}
+            </Button>
+          </div>
+        )}
+
         {['DRAFT', 'SUBMITTED', 'UNDER_REVIEW', 'ACTIVE', 'APPROVED'].includes(permit.status) && (
           <div className="flex items-center gap-2 pt-2 border-t border-surface-border flex-wrap">
             {permit.status === 'DRAFT' && canSubmit && (
