@@ -2,8 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getPermitById, updatePermitStatus } from '@/lib/dal/permits.dal';
 import { sendPermitStatusEmail } from '@/lib/email';
+import { logAction } from '@/lib/dal/audit.dal';
 import { db } from '@/lib/db';
 import type { PermitStatus, UserRole } from '@/lib/types';
+
+// Map permit status → audit action
+const STATUS_AUDIT_ACTION: Partial<Record<string, string>> = {
+  SUBMITTED:    'PERMIT_SUBMITTED',
+  APPROVED:     'PERMIT_APPROVED',
+  REJECTED:     'PERMIT_REJECTED',
+  ACTIVE:       'PERMIT_ACTIVATED',
+  SUSPENDED:    'PERMIT_SUSPENDED',
+  CLOSED:       'PERMIT_CLOSED',
+  CANCELLED:    'PERMIT_CANCELLED',
+};
 
 const VALID_TRANSITIONS: Partial<Record<PermitStatus, PermitStatus[]>> = {
   DRAFT:        ['SUBMITTED', 'CANCELLED'],
@@ -122,6 +134,24 @@ export async function PATCH(
     }
 
     const updated = await updatePermitStatus(params.id, status as PermitStatus, notes);
+
+    // Audit log — fire-and-forget
+    const auditAction = STATUS_AUDIT_ACTION[status];
+    if (auditAction) {
+      const sessionUser = session?.user as Record<string, unknown> | undefined;
+      const performerId = (sessionUser?.id as string | undefined) ?? 'system';
+      logAction({
+        action:      auditAction as any,
+        entity:      'PERMIT',
+        entityId:    permit.id,
+        entityRef:   permit.permitNumber,
+        performedBy: { id: performerId } as any,
+        ipAddress:   req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? '',
+        deviceInfo:  req.headers.get('user-agent') ?? '',
+        changes:     [{ field: 'status', from: permit.status, to: status }],
+        metadata:    { notes: notes ?? null, role: sessionUser?.role ?? null },
+      }).catch(err => console.error('[audit status]', err));
+    }
 
     // When permit is submitted, create approval record + move to UNDER_REVIEW
     if (status === 'SUBMITTED') {

@@ -58,3 +58,27 @@ export async function countVerifiedIsolations(): Promise<number> {
 export async function countPendingIsolations(): Promise<number> {
   return db.isolationCertificate.count({ where: { status: 'PENDING' } });
 }
+
+export async function updateIsolationStatus(
+  id: string,
+  status: 'ISOLATED' | 'VERIFIED' | 'RELEASED' | 'CANCELLED',
+  userId: string | null,
+): Promise<IsolationCertificate> {
+  const now = new Date().toISOString();
+  const extraFields: Record<string, unknown> = {};
+
+  if (status === 'VERIFIED') {
+    extraFields.verifiedById = userId;
+    extraFields.verifiedAt   = now;
+  } else if (status === 'RELEASED') {
+    extraFields.releasedById = userId;
+    extraFields.releasedAt   = now;
+  }
+
+  const row = await db.isolationCertificate.update({
+    where: { id },
+    data: { status: status as any, ...extraFields },
+    include: ISO_INCLUDE,
+  });
+  return mapIsolationCert(row);
+}

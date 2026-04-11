@@ -73,19 +73,45 @@ function IsolationPointRow({ point }: { point: IsolationPoint }) {
 
 export function IsolationPage() {
   const { t } = useT();
+  const showToast   = useAppStore(s => s.showToast);
+  const dataVersion = useAppStore(s => s.dataVersion);
   const [certs, setCerts] = useState(MOCK_ISOLATION_CERTS);
+  const [acting, setActing] = useState<string | null>(null); // certId currently updating
+
+  const loadCerts = () => {
+    fetch('/api/isolation?active=true')
+      .then(r => r.ok ? r.json() : null)
+      .then(json => { if (json?.data?.length) setCerts(json.data); })
+      .catch(() => { /* keep mock */ });
+  };
 
   useEffect(() => {
-    const load = () => {
-      fetch('/api/isolation?active=true')
-        .then(r => r.ok ? r.json() : null)
-        .then(json => { if (json?.data?.length) setCerts(json.data); })
-        .catch(() => { /* keep mock */ });
-    };
-    load();
-    const interval = setInterval(load, 30_000);
+    loadCerts();
+    const interval = setInterval(loadCerts, 30_000);
     return () => clearInterval(interval);
-  }, []);
+  }, [dataVersion]);
+
+  const changeIsoStatus = async (certId: string, status: string, successMsg: string) => {
+    setActing(certId);
+    try {
+      const res = await fetch(`/api/isolation/${certId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      if (res.ok) {
+        showToast(successMsg, 'success');
+        loadCerts();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showToast(err.error || 'Action failed. Please try again.', 'error');
+      }
+    } catch {
+      showToast('Network error. Please try again.', 'error');
+    } finally {
+      setActing(null);
+    }
+  };
 
   const activeCount   = certs.filter(c => ['ISOLATED', 'VERIFIED'].includes(c.status)).length;
   const pendingCount  = certs.filter(c => c.status === 'PENDING').length;
@@ -161,12 +187,24 @@ export function IsolationPage() {
               </div>
               <div className="flex items-center gap-2">
                 {cert.status === 'ISOLATED' && (
-                  <Button variant="warning" size="xs" icon={CheckCircle2}>
+                  <Button
+                    variant="warning"
+                    size="xs"
+                    icon={CheckCircle2}
+                    loading={acting === cert.id}
+                    onClick={() => changeIsoStatus(cert.id, 'VERIFIED', `Isolation ${cert.certificateNumber} verified.`)}
+                  >
                     {t.isolation.verifyIsolation}
                   </Button>
                 )}
                 {cert.status === 'VERIFIED' && (
-                  <Button variant="danger" size="xs" icon={Unlock}>
+                  <Button
+                    variant="danger"
+                    size="xs"
+                    icon={Unlock}
+                    loading={acting === cert.id}
+                    onClick={() => changeIsoStatus(cert.id, 'RELEASED', `Isolation ${cert.certificateNumber} released.`)}
+                  >
                     {t.isolation.requestRelease}
                   </Button>
                 )}

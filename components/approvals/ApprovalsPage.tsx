@@ -153,6 +153,7 @@ function DecisionModal({ approval, onClose, onDecide }: DecisionModalProps) {
 export function ApprovalsPage() {
   const showToast   = useAppStore(s => s.showToast);
   const currentUser = useAppStore(s => s.currentUser);
+  const dataVersion = useAppStore(s => s.dataVersion);
   const { t } = useT();
 
   const canApprove = rbac.canApprove(currentUser?.role);
@@ -177,7 +178,7 @@ export function ApprovalsPage() {
     load();
     const interval = setInterval(load, 30_000);
     return () => clearInterval(interval);
-  }, []);
+  }, [dataVersion]);
 
   const handleDecide = async (id: string, decision: ApprovalDecision, comments: string, conditions: string[]) => {
     try {

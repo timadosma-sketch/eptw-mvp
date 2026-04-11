@@ -88,6 +88,7 @@ export function DashboardPage() {
   const openWizard       = useAppStore(s => s.openWizard);
   const openPermitDetail = useAppStore(s => s.openPermitDetail);
   const currentUser      = useAppStore(s => s.currentUser);
+  const dataVersion      = useAppStore(s => s.dataVersion);
   const { t } = useT();
 
   // Start with mock data so the UI renders immediately, then replace with DB data
@@ -113,7 +114,7 @@ export function DashboardPage() {
     load();
     const interval = setInterval(load, 30_000);
     return () => clearInterval(interval);
-  }, []);
+  }, [dataVersion]);
 
   const activePermits = allPermits.filter(p => ['ACTIVE', 'APPROVED', 'UNDER_REVIEW'].includes(p.status));
   const recentGas     = gasRecords.slice(0, 5);

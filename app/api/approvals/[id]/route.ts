@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { getApprovalById, submitDecision } from '@/lib/dal/approvals.dal';
 import { getPermitById, updatePermitStatus } from '@/lib/dal/permits.dal';
 import { sendPermitStatusEmail } from '@/lib/email';
+import { logAction } from '@/lib/dal/audit.dal';
 import type { ApprovalDecision, PermitStatus } from '@/lib/types';
 
 export async function GET(
@@ -73,6 +74,24 @@ export async function PATCH(
         console.error('[approvals cascade]', cascadeErr);
       }
     }
+
+    // Audit log — fire-and-forget
+    const sessionUser = session?.user as Record<string, unknown> | undefined;
+    const performerId = (sessionUser?.id as string | undefined) ?? 'system';
+    const auditAction = decision === 'APPROVED' ? 'PERMIT_APPROVED'
+      : decision === 'REJECTED' ? 'PERMIT_REJECTED'
+      : 'APPROVAL_SUBMITTED';
+    logAction({
+      action:      auditAction as any,
+      entity:      'PERMIT',
+      entityId:    updated.permitId ?? params.id,
+      entityRef:   updated.permitNumber,
+      performedBy: { id: performerId } as any,
+      ipAddress:   req.headers.get('x-forwarded-for') ?? '',
+      deviceInfo:  req.headers.get('user-agent') ?? '',
+      changes:     [{ field: 'approval.decision', from: null, to: decision }],
+      metadata:    { approvalId: params.id, comments: comments ?? null },
+    }).catch(err => console.error('[audit approval]', err));
 
     return NextResponse.json(updated);
   } catch (err) {
