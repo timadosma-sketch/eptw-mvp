@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import {
-  MapPin, Wind, AlertTriangle, CheckCircle2, XCircle, Paperclip, Send, Download, PlayCircle,
+  MapPin, Wind, AlertTriangle, CheckCircle2, XCircle, Paperclip, Send, Download, PlayCircle, Ban,
 } from 'lucide-react';
 import { Drawer } from '@/components/shared/Modal';
 import { PermitStatusBadge, RiskBadge, GasStatusBadge } from '@/components/shared/StatusBadge';
@@ -104,6 +104,11 @@ export function PermitDetailDrawer() {
 
   const handleSuspend = () => changeStatus('SUSPENDED', 'Permit suspended. All workers notified.');
   const handleClose   = () => changeStatus('CLOSED',    'Permit closed successfully.');
+  const handleCancel  = () => {
+    const reason = window.prompt('Reason for cancellation (required):');
+    if (!reason?.trim()) return;
+    changeStatus('CANCELLED', `Permit ${permit.permitNumber} cancelled.`);
+  };
 
   const handleExportPDF = async () => {
     if (!permit) return;
@@ -252,7 +257,7 @@ export function PermitDetailDrawer() {
           </Button>
         </div>
 
-        {['DRAFT', 'ACTIVE', 'APPROVED'].includes(permit.status) && (
+        {['DRAFT', 'SUBMITTED', 'UNDER_REVIEW', 'ACTIVE', 'APPROVED'].includes(permit.status) && (
           <div className="flex items-center gap-2 pt-2 border-t border-surface-border flex-wrap">
             {permit.status === 'DRAFT' && canSubmit && (
               <Button variant="primary" size="sm" icon={Send} loading={acting} onClick={() => changeStatus('SUBMITTED', `Permit ${permit.permitNumber} submitted for approval.`)}>
@@ -264,7 +269,7 @@ export function PermitDetailDrawer() {
                 Activate Permit
               </Button>
             )}
-            {permit.gasTestRequired && permit.status !== 'DRAFT' && canGasTest && (
+            {permit.gasTestRequired && !['DRAFT'].includes(permit.status) && canGasTest && (
               <Button variant="secondary" size="sm" icon={Wind} onClick={() => openGasTestModal(permit.id)}>
                 {t.permitDetail.gasTest}
               </Button>
@@ -279,6 +284,13 @@ export function PermitDetailDrawer() {
                 {t.permitDetail.closePermit}
               </Button>
             )}
+            {/* Cancel — available to requester on DRAFT/SUBMITTED; to control on any open status */}
+            {(['DRAFT', 'SUBMITTED'].includes(permit.status) && canSubmit) ||
+             (['UNDER_REVIEW', 'APPROVED'].includes(permit.status) && canControl) ? (
+              <Button variant="danger" size="sm" icon={Ban} loading={acting} onClick={handleCancel} className="ml-auto">
+                Cancel Permit
+              </Button>
+            ) : null}
           </div>
         )}
 

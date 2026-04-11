@@ -76,6 +76,8 @@ interface WorkDetails {
   validFrom: string;
   validTo: string;
   workerCount: number;
+  simopsZone: string;
+  notes: string;
 }
 
 function StepWorkDetails({
@@ -128,6 +130,14 @@ function StepWorkDetails({
           <label className="text-xs text-gray-500 mb-1 block">{t.wizard.workerCount} *</label>
           <input type="number" min={1} value={data.workerCount ?? ''} onChange={e => set('workerCount', parseInt(e.target.value))} placeholder="0" className={inputCls} />
         </div>
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">SIMOPS Zone</label>
+          <input value={data.simopsZone ?? ''} onChange={e => set('simopsZone', e.target.value)} placeholder="e.g. Zone A3 (optional)" className={inputCls} />
+        </div>
+      </div>
+      <div>
+        <label className="text-xs text-gray-500 mb-1 block">Additional Notes</label>
+        <textarea value={data.notes ?? ''} onChange={e => set('notes', e.target.value)} placeholder="Any special instructions or conditions…" rows={2} className={cn(inputCls, 'resize-none')} />
       </div>
     </div>
   );
@@ -220,6 +230,8 @@ function StepReview({ type, workDetails, risk, reqs, contractors }: {
           <ReviewRow label="Isolation / LOTO" value={reqs.isolationRequired ? '✓ Required' : 'Not required'} />
           <ReviewRow label="Confined Space"   value={reqs.confinedSpaceEntry? '✓ Yes' : 'No'} />
           <ReviewRow label="Contractors"      value={contractors.length > 0 ? `${contractors.length} added` : 'None'} />
+          {workDetails.simopsZone && <ReviewRow label="SIMOPS Zone" value={workDetails.simopsZone} />}
+          {workDetails.notes      && <ReviewRow label="Notes"       value={workDetails.notes.substring(0, 80) + (workDetails.notes.length > 80 ? '…' : '')} />}
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -495,6 +507,8 @@ export function CreatePermitWizard() {
         gasTestRequired:      reqs.gasTestRequired,
         isolationRequired:    reqs.isolationRequired,
         confinedSpaceEntry:   reqs.confinedSpaceEntry,
+        simopsZone:           workDetails.simopsZone ?? '',
+        notes:                workDetails.notes ?? '',
       });
       closeWizard();
       showToast(`Permit ${permit.permitNumber} created as DRAFT — open it to submit for approval.`, 'success');
