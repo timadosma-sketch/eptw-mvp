@@ -2,16 +2,32 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getPermitById, updatePermitStatus } from '@/lib/dal/permits.dal';
 import { sendPermitStatusEmail } from '@/lib/email';
-import type { PermitStatus } from '@/lib/types';
+import { db } from '@/lib/db';
+import type { PermitStatus, UserRole } from '@/lib/types';
 
 const VALID_TRANSITIONS: Partial<Record<PermitStatus, PermitStatus[]>> = {
-  DRAFT:       ['SUBMITTED', 'CANCELLED'],
-  SUBMITTED:   ['UNDER_REVIEW', 'CANCELLED'],
-  UNDER_REVIEW:['APPROVED', 'REJECTED', 'DRAFT'],  // DRAFT = referred back for revision
-  APPROVED:    ['ACTIVE', 'CANCELLED'],
-  ACTIVE:      ['SUSPENDED', 'CLOSED', 'CANCELLED'],
-  SUSPENDED:   ['ACTIVE', 'CANCELLED', 'CLOSED'],
+  DRAFT:        ['SUBMITTED', 'CANCELLED'],
+  SUBMITTED:    ['UNDER_REVIEW', 'APPROVED', 'REJECTED', 'DRAFT', 'CANCELLED'],
+  UNDER_REVIEW: ['APPROVED', 'REJECTED', 'DRAFT'],  // DRAFT = referred back
+  APPROVED:     ['ACTIVE', 'CANCELLED'],
+  ACTIVE:       ['SUSPENDED', 'CLOSED', 'CANCELLED'],
+  SUSPENDED:    ['ACTIVE', 'CANCELLED', 'CLOSED'],
 };
+
+// Map risk level to approval priority and SLA hours
+const RISK_PRIORITY: Record<string, { priority: string; slaHours: number }> = {
+  CRITICAL: { priority: 'P0', slaHours: 2  },
+  HIGH:     { priority: 'P1', slaHours: 4  },
+  MEDIUM:   { priority: 'P2', slaHours: 8  },
+  LOW:      { priority: 'P3', slaHours: 24 },
+};
+
+// Required approver role based on permit type
+function getRequiredRole(type: string, riskLevel: string): UserRole {
+  const highRisk = ['CRITICAL', 'HIGH'].includes(riskLevel);
+  const sensitive = ['HOT_WORK', 'CONFINED_SPACE', 'LINE_BREAKING', 'RADIOGRAPHY', 'OVERRIDE_BYPASS'].includes(type);
+  return (highRisk || sensitive) ? 'ISSUING_AUTHORITY' : 'AREA_AUTHORITY';
+}
 
 // Who to notify for each transition
 function getRecipients(
@@ -20,27 +36,66 @@ function getRecipients(
 ): string[] {
   if (!permit) return [];
   const emails: string[] = [];
-
-  const requester       = (permit as unknown as { requestedBy?: { email?: string } }).requestedBy?.email;
-  const areaAuth        = (permit as unknown as { areaAuthority?: { email?: string } }).areaAuthority?.email;
-  const issuingAuth     = (permit as unknown as { issuingAuthority?: { email?: string } }).issuingAuthority?.email;
+  const p = permit as unknown as {
+    requestedBy?: { email?: string };
+    areaAuthority?: { email?: string };
+    issuingAuthority?: { email?: string };
+  };
 
   if (newStatus === 'SUBMITTED') {
-    // Notify all assigned approvers
-    if (areaAuth)    emails.push(areaAuth);
-    if (issuingAuth) emails.push(issuingAuth);
+    if (p.areaAuthority?.email)    emails.push(p.areaAuthority.email);
+    if (p.issuingAuthority?.email) emails.push(p.issuingAuthority.email);
   } else if (['APPROVED', 'REJECTED', 'ACTIVE', 'CLOSED', 'CANCELLED'].includes(newStatus)) {
-    // Notify the requester
-    if (requester) emails.push(requester);
+    if (p.requestedBy?.email) emails.push(p.requestedBy.email);
   } else if (newStatus === 'SUSPENDED') {
-    // Notify everyone: requester + authorities
-    if (requester)   emails.push(requester);
-    if (areaAuth)    emails.push(areaAuth);
-    if (issuingAuth) emails.push(issuingAuth);
+    if (p.requestedBy?.email)    emails.push(p.requestedBy.email);
+    if (p.areaAuthority?.email)  emails.push(p.areaAuthority.email);
+    if (p.issuingAuthority?.email) emails.push(p.issuingAuthority.email);
   }
 
-  // Deduplicate
-  return emails.filter((e, i, arr) => e && arr.indexOf(e) === i);
+  return emails.filter((e, i, arr) => Boolean(e) && arr.indexOf(e) === i);
+}
+
+// Create an Approval record and auto-assign to an eligible user
+async function createApprovalForPermit(
+  permit: NonNullable<Awaited<ReturnType<typeof getPermitById>>>,
+) {
+  const { priority, slaHours } = RISK_PRIORITY[permit.riskLevel] ?? { priority: 'P2', slaHours: 8 };
+  const requiredRole = getRequiredRole(permit.type, permit.riskLevel);
+  const dueBy = new Date(Date.now() + slaHours * 3_600_000);
+
+  // Find an available approver with the required role
+  const approver = await db.user.findFirst({
+    where: { role: requiredRole as any },
+    orderBy: { id: 'asc' },
+  });
+
+  await db.approval.create({
+    data: {
+      permitId:     permit.id,
+      permitNumber: permit.permitNumber,
+      permitType:   permit.type as any,
+      permitTitle:  permit.title,
+      location:     permit.location,
+      requiredRole: requiredRole as any,
+      assignedToId: approver?.id ?? null,
+      dueBy,
+      priority,
+      isOverdue:    false,
+    },
+  });
+
+  // If we found an approver, email them
+  if (approver?.email) {
+    sendPermitStatusEmail({
+      to:           approver.email,
+      permitNumber: permit.permitNumber,
+      permitTitle:  permit.title,
+      status:       'SUBMITTED',
+      location:     permit.location,
+      performedBy:  'System',
+    }).catch(err => console.error('[email approval-assign]', err));
+  }
 }
 
 export async function PATCH(
@@ -68,10 +123,21 @@ export async function PATCH(
 
     const updated = await updatePermitStatus(params.id, status as PermitStatus, notes);
 
+    // When permit is submitted, create approval record + move to UNDER_REVIEW
+    if (status === 'SUBMITTED') {
+      // Check if an approval already exists (idempotent)
+      const existing = await db.approval.findFirst({ where: { permitId: params.id, decision: null } });
+      if (!existing) {
+        await createApprovalForPermit(permit);
+      }
+      // Automatically advance to UNDER_REVIEW so approvers see it immediately
+      await updatePermitStatus(params.id, 'UNDER_REVIEW');
+    }
+
     // Fire-and-forget email notification
+    const performerName = (session?.user as Record<string, unknown> | undefined)?.name as string | undefined;
     const recipients = getRecipients(permit, status as PermitStatus);
     if (recipients.length > 0) {
-      const performerName = (session?.user as Record<string, unknown> | undefined)?.name as string | undefined;
       sendPermitStatusEmail({
         to:           recipients,
         permitNumber: permit.permitNumber,

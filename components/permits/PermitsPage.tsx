@@ -24,6 +24,7 @@ export function PermitsPage() {
   const openWizard       = useAppStore(s => s.openWizard);
   const openPermitDetail = useAppStore(s => s.openPermitDetail);
   const currentUser      = useAppStore(s => s.currentUser);
+  const dataVersion      = useAppStore(s => s.dataVersion);
   const { t } = useT();
 
   const canCreate = rbac.canCreatePermit(currentUser?.role);
@@ -43,7 +44,7 @@ export function PermitsPage() {
     load();
     const interval = setInterval(load, 30_000);
     return () => clearInterval(interval);
-  }, []);
+  }, [dataVersion]);
 
   const filtered = useMemo(() => {
     return permits.filter(p => {

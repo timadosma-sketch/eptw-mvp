@@ -64,6 +64,10 @@ interface AppState {
   permitDetailOpen: boolean;
   openPermitDetail: (id: string) => void;
   closePermitDetail: () => void;
+
+  // Version counter — increment to trigger re-fetch in permit/approval lists
+  dataVersion: number;
+  bumpDataVersion: () => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -82,7 +86,7 @@ export const useAppStore = create<AppState>((set) => ({
   wizardOpen: false,
   wizardStep: 0,
   openWizard: () => set({ wizardOpen: true, wizardStep: 0 }),
-  closeWizard: () => set({ wizardOpen: false, wizardStep: 0 }),
+  closeWizard: () => set(s => ({ wizardOpen: false, wizardStep: 0, dataVersion: s.dataVersion + 1 })),
   setWizardStep: (step) => set({ wizardStep: step }),
 
   alerts: MOCK_ALERTS,
@@ -117,5 +121,8 @@ export const useAppStore = create<AppState>((set) => ({
 
   permitDetailOpen: false,
   openPermitDetail: (id) => set({ selectedPermitId: id, permitDetailOpen: true }),
-  closePermitDetail: () => set({ permitDetailOpen: false, selectedPermitId: null }),
+  closePermitDetail: () => set(s => ({ permitDetailOpen: false, selectedPermitId: null, dataVersion: s.dataVersion + 1 })),
+
+  dataVersion: 0,
+  bumpDataVersion: () => set(s => ({ dataVersion: s.dataVersion + 1 })),
 }));
