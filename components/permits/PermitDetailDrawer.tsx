@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import {
-  MapPin, Wind, AlertTriangle, CheckCircle2, XCircle, Paperclip, Send, Download, PlayCircle, Ban, Pencil, Save,
+  MapPin, Wind, AlertTriangle, CheckCircle2, XCircle, Paperclip, Send, Download, PlayCircle, Ban, Pencil, Save, Clock,
 } from 'lucide-react';
 import { Drawer } from '@/components/shared/Modal';
 import { PermitStatusBadge, RiskBadge, GasStatusBadge } from '@/components/shared/StatusBadge';
@@ -10,7 +10,7 @@ import { Button } from '@/components/shared/Button';
 import { useAppStore } from '@/lib/store/useAppStore';
 import { useT } from '@/lib/i18n/useT';
 import { PERMIT_TYPE_CONFIG } from '@/lib/constants';
-import { formatDateTime, getTimeRemaining } from '@/lib/utils/formatters';
+import { formatDateTime, getTimeRemaining, isExpiringSoon } from '@/lib/utils/formatters';
 import { cn } from '@/lib/utils/cn';
 import { downloadPermitPDF } from './PermitPDF';
 import { rbac } from '@/lib/rbac';
@@ -215,6 +215,36 @@ export function PermitDetailDrawer() {
     }
   };
 
+  const handleExtend = async (hours: number) => {
+    setActing(true);
+    try {
+      const newValidTo = new Date(new Date(permit.validTo).getTime() + hours * 3_600_000).toISOString();
+      const res = await fetch(`/api/permits/${permit.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        // Status stays ACTIVE — we use the notes field to convey the extension
+        body: JSON.stringify({ status: 'ACTIVE', notes: `Extended by ${hours}h — new expiry: ${newValidTo}` }),
+      });
+      // Also PATCH the validTo field directly
+      const patchRes = await fetch(`/api/permits/${permit.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ validTo: newValidTo }),
+      });
+      if (patchRes.ok || res.ok) {
+        const updated = await patchRes.json().catch(() => null);
+        if (updated) setPermit(updated);
+        showToast(`Permit extended by ${hours} hour${hours > 1 ? 's' : ''}.`, 'success');
+      } else {
+        showToast('Failed to extend permit.', 'error');
+      }
+    } catch {
+      showToast('Network error.', 'error');
+    } finally {
+      setActing(false);
+    }
+  };
+
   const handleExportPDF = async () => {
     if (!permit) return;
     setExporting(true);
@@ -234,15 +264,54 @@ export function PermitDetailDrawer() {
       <div className="px-6 py-5 space-y-0">
 
         {/* Status bar */}
-        <div className="flex items-center gap-3 mb-6 p-3 rounded border border-surface-border bg-surface-panel">
+        <div className="flex items-center gap-3 mb-4 p-3 rounded border border-surface-border bg-surface-panel">
           <PermitStatusBadge status={permit.status} size="lg" />
           <RiskBadge level={permit.riskLevel} />
           {permit.status === 'ACTIVE' && (
-            <span className="ml-auto text-xs font-mono text-yellow-400">
+            <span className={cn(
+              'ml-auto text-xs font-mono',
+              isExpiringSoon(permit.validTo, 2) ? 'text-red-400 font-bold animate-pulse' : 'text-yellow-400'
+            )}>
               {getTimeRemaining(permit.validTo)}
             </span>
           )}
         </div>
+
+        {/* Expiry warning banner */}
+        {permit.status === 'ACTIVE' && isExpiringSoon(permit.validTo, 2) && (
+          <div className="flex items-center gap-3 mb-4 px-4 py-3 rounded border border-orange-700/60 bg-orange-950/30">
+            <Clock className="w-4 h-4 text-orange-400 flex-shrink-0 animate-pulse" />
+            <div className="flex-1 text-xs text-orange-300">
+              <span className="font-bold">Permit expiring soon.</span>{' '}
+              Expires {getTimeRemaining(permit.validTo)}. Extend or close before work stops.
+            </div>
+            {canControl && (
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <button
+                  onClick={() => handleExtend(2)}
+                  disabled={acting}
+                  className="text-2xs border border-orange-700 text-orange-400 rounded px-2 py-1 hover:bg-orange-900/40 transition-colors disabled:opacity-50"
+                >
+                  +2h
+                </button>
+                <button
+                  onClick={() => handleExtend(4)}
+                  disabled={acting}
+                  className="text-2xs border border-orange-700 text-orange-400 rounded px-2 py-1 hover:bg-orange-900/40 transition-colors disabled:opacity-50"
+                >
+                  +4h
+                </button>
+                <button
+                  onClick={() => handleExtend(8)}
+                  disabled={acting}
+                  className="text-2xs border border-orange-700 text-orange-400 rounded px-2 py-1 hover:bg-orange-900/40 transition-colors disabled:opacity-50"
+                >
+                  +8h
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Edit mode header bar */}
         {permit.status === 'DRAFT' && canSubmit && (

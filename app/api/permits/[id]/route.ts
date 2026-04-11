@@ -25,11 +25,15 @@ export async function PATCH(
     const session  = await auth();
     const body     = await req.json();
 
-    // Only allow PATCH on DRAFT permits (guard at API level)
     const existing = await getPermitById(params.id);
-    if (existing && existing.status !== 'DRAFT') {
+
+    // Editing all fields is only allowed on DRAFT permits
+    // Exception: validTo extension is allowed on ACTIVE permits
+    const editableFields = Object.keys(body);
+    const onlyExtendingValidity = editableFields.every(k => k === 'validTo');
+    if (existing && existing.status !== 'DRAFT' && !onlyExtendingValidity) {
       return NextResponse.json(
-        { error: 'Only DRAFT permits can be edited directly' },
+        { error: 'Only DRAFT permits can be fully edited. Use the status endpoint for transitions.' },
         { status: 422 },
       );
     }
