@@ -88,7 +88,19 @@ export function PermitDetailDrawer() {
     setApprovalComments('');
   }, [selectedPermitId, permitDetailOpen]);
 
-  if (!permit) return null;
+  // Show drawer with loading skeleton when open but permit not yet loaded
+  if (!permit) {
+    if (!permitDetailOpen) return null;
+    return (
+      <Drawer open={permitDetailOpen} onClose={closePermitDetail} title="Loading…" width="w-[680px]">
+        <div className="px-6 py-5 space-y-4 animate-pulse">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-10 rounded bg-surface-panel border border-surface-border" />
+          ))}
+        </div>
+      </Drawer>
+    );
+  }
 
   const typeCfg  = PERMIT_TYPE_CONFIG[permit.type];
   const latestGas = gasRecords[gasRecords.length - 1];
