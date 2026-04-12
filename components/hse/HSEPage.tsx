@@ -221,6 +221,135 @@ function IncidentReportModal({ open, onClose, onSuccess }: IncidentModalProps) {
   );
 }
 
+// ─── Incident Detail Modal ──────────────────────────────────────────────────
+
+interface IncidentDetailProps {
+  incident: HSEIncident | null;
+  canReport: boolean;
+  onClose:   () => void;
+  onStatusChanged: (id: string, status: IncidentStatus) => void;
+}
+
+function IncidentDetailModal({ incident, canReport, onClose, onStatusChanged }: IncidentDetailProps) {
+  const showToast = useAppStore(s => s.showToast);
+  const [acting,  setActing]  = useState(false);
+
+  if (!incident) return null;
+
+  const handleStatus = async (status: IncidentStatus) => {
+    setActing(true);
+    try {
+      const res = await fetch('/api/hse', {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ id: incident.id, status }),
+      });
+      if (res.ok) {
+        onStatusChanged(incident.id, status);
+        showToast(`Incident ${incident.id} updated to ${status.replace('_', ' ')}.`, status === 'CLOSED' ? 'success' : 'info');
+        onClose();
+      } else {
+        showToast('Failed to update incident.', 'error');
+      }
+    } catch {
+      showToast('Network error.', 'error');
+    } finally {
+      setActing(false);
+    }
+  };
+
+  const typeCfg = INCIDENT_TYPES.find(t_ => t_.value === incident.type);
+
+  return (
+    <Modal
+      open={!!incident}
+      onClose={onClose}
+      title={`Incident — ${incident.id}`}
+      subtitle={typeCfg?.label ?? incident.type.replace(/_/g, ' ')}
+      size="md"
+    >
+      <div className="space-y-4">
+        {/* Header badges */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={cn('text-xs px-2.5 py-1 rounded border font-semibold', TYPE_COLOR[incident.type])}>
+            {typeCfg?.label ?? incident.type}
+          </span>
+          <span className={cn('text-xs font-bold uppercase', STATUS_COLOR[incident.status])}>
+            ● {incident.status.replace('_', ' ')}
+          </span>
+          <span className="text-2xs text-gray-600 ml-auto font-mono">{incident.id}</span>
+        </div>
+
+        {/* Fields */}
+        <div className="space-y-3">
+          <div>
+            <div className="text-2xs text-gray-500 uppercase tracking-wider mb-1">Location</div>
+            <div className="text-xs text-gray-200">📍 {incident.location}</div>
+          </div>
+          <div>
+            <div className="text-2xs text-gray-500 uppercase tracking-wider mb-1">Description</div>
+            <div className="text-xs text-gray-200 leading-relaxed">{incident.description}</div>
+          </div>
+          {incident.immediateActions && (
+            <div>
+              <div className="text-2xs text-gray-500 uppercase tracking-wider mb-1">Immediate Actions</div>
+              <div className="text-xs text-gray-300 leading-relaxed">{incident.immediateActions}</div>
+            </div>
+          )}
+          {incident.injuries && (
+            <div>
+              <div className="text-2xs text-gray-500 uppercase tracking-wider mb-1">Injuries / Medical</div>
+              <div className="text-xs text-gray-300 leading-relaxed">{incident.injuries}</div>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <div className="p-3 rounded border border-surface-border bg-surface-panel text-xs">
+              <div className="text-gray-500 mb-1">Reported By</div>
+              <div className="text-gray-200 font-semibold">{incident.reportedBy}</div>
+            </div>
+            <div className="p-3 rounded border border-surface-border bg-surface-panel text-xs">
+              <div className="text-gray-500 mb-1">Reported At</div>
+              <div className="text-gray-200 font-mono">{formatDateTime(incident.reportedAt)}</div>
+            </div>
+          </div>
+          {incident.closedAt && (
+            <div className="text-2xs text-emerald-500">
+              ✓ Closed at {formatDateTime(incident.closedAt)}
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        {canReport && incident.status !== 'CLOSED' && (
+          <div className="flex items-center gap-2 pt-3 border-t border-surface-border">
+            {incident.status === 'OPEN' && (
+              <Button
+                variant="warning"
+                size="sm"
+                icon={Clock}
+                loading={acting}
+                onClick={() => handleStatus('UNDER_INVESTIGATION')}
+              >
+                Start Investigation
+              </Button>
+            )}
+            <Button
+              variant="success"
+              size="sm"
+              icon={CheckCircle2}
+              loading={acting}
+              onClick={() => handleStatus('CLOSED')}
+              className="ml-auto"
+            >
+              Close Incident
+            </Button>
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
 // ─── Main Page ──────────────────────────────────────────────────────────────
 
 export function HSEPage() {
@@ -231,10 +360,11 @@ export function HSEPage() {
 
   const canReport = rbac.canApprove(currentUser?.role) || currentUser?.role === 'HSE_OFFICER' || currentUser?.role === 'SITE_SUPERVISOR';
 
-  const [m, setM]                 = useState(MOCK_DASHBOARD_METRICS);
-  const [incidents, setIncidents] = useState<HSEIncident[]>([]);
-  const [reportOpen, setReportOpen] = useState(false);
-  const [closingId, setClosingId] = useState<string | null>(null);
+  const [m, setM]                       = useState(MOCK_DASHBOARD_METRICS);
+  const [incidents, setIncidents]       = useState<HSEIncident[]>([]);
+  const [reportOpen, setReportOpen]     = useState(false);
+  const [closingId, setClosingId]       = useState<string | null>(null);
+  const [selectedIncident, setSelectedIncident] = useState<HSEIncident | null>(null);
 
   const loadData = () => {
     fetch('/api/dashboard')
@@ -372,8 +502,9 @@ export function HSEPage() {
                 {incidents.map(inc => (
                   <div
                     key={inc.id}
+                    onClick={() => setSelectedIncident(inc)}
                     className={cn(
-                      'flex items-start gap-4 px-4 py-3.5 rounded-md border bg-surface-card',
+                      'flex items-start gap-4 px-4 py-3.5 rounded-md border bg-surface-card cursor-pointer hover:border-brand/40 transition-colors',
                       inc.status === 'OPEN'                ? 'border-yellow-800/50' :
                       inc.status === 'UNDER_INVESTIGATION' ? 'border-orange-800/50' :
                       'border-surface-border opacity-60',
@@ -500,6 +631,16 @@ export function HSEPage() {
         open={reportOpen}
         onClose={() => setReportOpen(false)}
         onSuccess={handleIncidentCreated}
+      />
+
+      <IncidentDetailModal
+        incident={selectedIncident}
+        canReport={canReport}
+        onClose={() => setSelectedIncident(null)}
+        onStatusChanged={(id, status) => {
+          setIncidents(prev => prev.map(i => i.id === id ? { ...i, status } : i));
+          setSelectedIncident(null);
+        }}
       />
     </>
   );
