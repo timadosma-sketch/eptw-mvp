@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import {
-  MapPin, Wind, AlertTriangle, CheckCircle2, XCircle, Paperclip, Send, Download, PlayCircle, Ban, Pencil, Save, Clock,
+  MapPin, Wind, AlertTriangle, CheckCircle2, XCircle, Paperclip, Send, Download, PlayCircle, Ban, Pencil, Save, Clock, Copy,
 } from 'lucide-react';
 import { Drawer, Modal } from '@/components/shared/Modal';
 import { PermitStatusBadge, RiskBadge, GasStatusBadge } from '@/components/shared/StatusBadge';
@@ -40,9 +40,11 @@ export function PermitDetailDrawer() {
   const permitDetailOpen  = useAppStore(s => s.permitDetailOpen);
   const selectedPermitId  = useAppStore(s => s.selectedPermitId);
   const closePermitDetail = useAppStore(s => s.closePermitDetail);
+  const openPermitDetail  = useAppStore(s => s.openPermitDetail);
   const openGasTestModal  = useAppStore(s => s.openGasTestModal);
   const showToast         = useAppStore(s => s.showToast);
   const currentUser       = useAppStore(s => s.currentUser);
+  const bumpDataVersion   = useAppStore(s => s.bumpDataVersion);
   const { t } = useT();
 
   const canSubmit  = rbac.canCreatePermit(currentUser?.role);
@@ -266,6 +268,56 @@ export function PermitDetailDrawer() {
     try { await downloadPermitPDF(permit); }
     catch { showToast('Failed to generate PDF. Please try again.', 'error'); }
     finally { setExporting(false); }
+  };
+
+  const handleDuplicate = async () => {
+    if (!permit) return;
+    setActing(true);
+    try {
+      const now       = new Date();
+      const validFrom = new Date(now.getTime() + 24 * 3_600_000).toISOString(); // tomorrow
+      const validTo   = new Date(now.getTime() + 48 * 3_600_000).toISOString(); // +48h
+
+      const res = await fetch('/api/permits', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type:                 permit.type,
+          riskLevel:            permit.riskLevel,
+          title:                `${permit.title} (copy)`,
+          description:          permit.description,
+          location:             permit.location,
+          unit:                 permit.unit,
+          area:                 permit.area,
+          equipment:            permit.equipment,
+          requestedById:        currentUser?.id ?? 'usr-001',
+          validFrom,
+          validTo,
+          workerCount:          permit.workerCount,
+          jsaCompleted:         false,
+          toolboxTalkCompleted: false,
+          gasTestRequired:      permit.gasTestRequired,
+          isolationRequired:    permit.isolationRequired,
+          confinedSpaceEntry:   permit.confinedSpaceEntry,
+          simopsZone:           permit.simopsZone ?? '',
+          notes:                permit.notes ?? '',
+        }),
+      });
+      if (res.ok) {
+        const newPermit = await res.json();
+        bumpDataVersion();
+        showToast(`Permit ${newPermit.permitNumber} created as DRAFT copy.`, 'success');
+        closePermitDetail();
+        setTimeout(() => openPermitDetail(newPermit.id), 300);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showToast(err.error ?? 'Failed to duplicate permit.', 'error');
+      }
+    } catch {
+      showToast('Network error. Please try again.', 'error');
+    } finally {
+      setActing(false);
+    }
   };
 
   return (
@@ -677,9 +729,14 @@ export function PermitDetailDrawer() {
           </div>
         )}
 
-        {/* Export PDF — always available */}
-        <div className="flex items-center justify-end pt-2 pb-2 border-t border-surface-border">
-          <Button variant="ghost" size="sm" icon={Download} loading={exporting} onClick={handleExportPDF}>
+        {/* Export PDF + Duplicate — always available */}
+        <div className="flex items-center justify-between pt-2 pb-2 border-t border-surface-border">
+          {canSubmit && (
+            <Button variant="ghost" size="sm" icon={Copy} loading={acting} onClick={handleDuplicate} title="Create a DRAFT copy of this permit">
+              Duplicate
+            </Button>
+          )}
+          <Button variant="ghost" size="sm" icon={Download} loading={exporting} onClick={handleExportPDF} className="ml-auto">
             Export PDF
           </Button>
         </div>
