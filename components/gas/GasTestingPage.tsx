@@ -333,6 +333,68 @@ export function GasTestingPage() {
             <KPICard label={t.gas.exceedances}    value={dangerCount}             icon={AlertTriangle}  variant={dangerCount > 0 ? 'danger' : 'default'} pulse={dangerCount > 0} />
           </div>
 
+          {/* Gas Test Result Timeline */}
+          {gasRecords.length > 0 && (
+            <div>
+              <SectionHeader
+                title="TEST RESULT TIMELINE"
+                subtitle={`Last ${Math.min(gasRecords.length, 20)} tests — ${gasRecords.length > 0 ? `${Math.round((safeCount / gasRecords.length) * 100)}% pass rate` : ''}`}
+              />
+              <div className="p-4 rounded-md border border-surface-border bg-surface-card">
+                {/* Pass-rate progress bar */}
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-xs text-gray-500 w-20 flex-shrink-0">Pass Rate</span>
+                  <div className="flex-1 h-2 bg-surface-panel rounded-full overflow-hidden border border-surface-border">
+                    <div
+                      className={cn(
+                        'h-full rounded-full transition-all',
+                        safeCount / Math.max(gasRecords.length, 1) >= 0.9 ? 'bg-emerald-500' :
+                        safeCount / Math.max(gasRecords.length, 1) >= 0.7 ? 'bg-yellow-500' : 'bg-red-500'
+                      )}
+                      style={{ width: `${Math.round((safeCount / Math.max(gasRecords.length, 1)) * 100)}%` }}
+                    />
+                  </div>
+                  <span className={cn(
+                    'text-xs font-mono font-bold w-10 text-right',
+                    safeCount / Math.max(gasRecords.length, 1) >= 0.9 ? 'text-emerald-400' :
+                    safeCount / Math.max(gasRecords.length, 1) >= 0.7 ? 'text-yellow-400' : 'text-red-400',
+                  )}>
+                    {Math.round((safeCount / Math.max(gasRecords.length, 1)) * 100)}%
+                  </span>
+                </div>
+
+                {/* Dot timeline — last 20 tests chronologically (oldest left) */}
+                <div className="flex items-end gap-1">
+                  {[...gasRecords].slice(0, 20).reverse().map((r, i) => {
+                    const dotColor = r.overallStatus === 'SAFE'    ? 'bg-emerald-500' :
+                                     r.overallStatus === 'WARNING' ? 'bg-yellow-500'  : 'bg-red-500';
+                    const barH     = r.overallStatus === 'SAFE'    ? 28 :
+                                     r.overallStatus === 'WARNING' ? 44 : 60;
+                    return (
+                      <div
+                        key={r.id}
+                        className="flex-1 flex flex-col items-center gap-1"
+                        title={`${r.permitNumber} · ${r.overallStatus} · ${new Date(r.testedAt).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}`}
+                      >
+                        <div className={cn('w-full rounded-t', dotColor)} style={{ height: `${barH}px`, minWidth: '6px' }} />
+                        <span className="text-2xs text-gray-700 font-mono hidden xl:block">
+                          {new Date(r.testedAt).getHours().toString().padStart(2, '0')}h
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="flex items-center gap-4 mt-3 text-2xs text-gray-600">
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" /> Safe</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-yellow-500 inline-block" /> Warning</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-red-500 inline-block" /> Danger</span>
+                  <span className="ml-auto text-gray-600">← older · newer →</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {latestRecord && (
             <div>
               <SectionHeader title={t.gas.latestReadings} subtitle={latestRecord.location} />
