@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { RefreshCw, CheckCircle2, AlertTriangle, FileText, Users } from 'lucide-react';
+import { RefreshCw, CheckCircle2, AlertTriangle, FileText, Users, History } from 'lucide-react';
 import { PageShell, SectionHeader } from '@/components/shared/PageShell';
 import { KPICard } from '@/components/shared/KPICard';
 import { Button } from '@/components/shared/Button';
@@ -11,8 +11,20 @@ import { MOCK_PERMITS } from '@/lib/mock/permits';
 import { MOCK_GAS_ALERTS } from '@/lib/mock/gas';
 import { MOCK_SIMOPS_CONFLICTS } from '@/lib/mock/simops';
 import { cn } from '@/lib/utils/cn';
-import { isExpiringSoon } from '@/lib/utils/formatters';
+import { isExpiringSoon, formatRelative, formatDateTime } from '@/lib/utils/formatters';
 import type { Permit, Alert, SIMOPSConflict } from '@/lib/types/index';
+
+interface HandoverRecord {
+  id: string;
+  shift: string;
+  completedAt: string;
+  activePermitCount: number;
+  suspendedCount: number;
+  gasAlertCount: number;
+  notes: string;
+  outgoingSupervisor: { name: string; role: string };
+  incomingSupervisor: { name: string; role: string };
+}
 
 interface ShiftItem {
   id: string;
@@ -98,9 +110,10 @@ const PRIORITY_COLORS: Record<string, string> = {
 };
 
 export function HandoverPage() {
-  const currentUser = useAppStore(s => s.currentUser);
-  const showToast   = useAppStore(s => s.showToast);
-  const dataVersion = useAppStore(s => s.dataVersion);
+  const currentUser     = useAppStore(s => s.currentUser);
+  const showToast       = useAppStore(s => s.showToast);
+  const dataVersion     = useAppStore(s => s.dataVersion);
+  const bumpDataVersion = useAppStore(s => s.bumpDataVersion);
   const { t } = useT();
 
   const [permits,   setPermits]   = useState(MOCK_PERMITS.filter(p => !['ARCHIVED','DRAFT'].includes(p.status)));
@@ -111,6 +124,7 @@ export function HandoverPage() {
   const [signedOff, setSignedOff] = useState(false);
   const [incomingSupervisors, setIncomingSupervisors] = useState<{ id: string; name: string; role: string }[]>([]);
   const [incomingId, setIncomingId] = useState('');
+  const [handoverHistory, setHandoverHistory] = useState<HandoverRecord[]>([]);
 
   useEffect(() => {
     fetch('/api/permits?pageSize=100')
@@ -136,6 +150,10 @@ export function HandoverPage() {
         setIncomingSupervisors(candidates);
         if (candidates.length > 0 && !incomingId) setIncomingId(candidates[0].id);
       })
+      .catch(() => {});
+    fetch('/api/handover')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.data) setHandoverHistory(d.data.slice(0, 5)); })
       .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataVersion]);
@@ -176,6 +194,7 @@ export function HandoverPage() {
       if (res.ok) {
         setSignedOff(true);
         showToast('Shift handover completed and signed off. Incoming supervisor notified.', 'success');
+        bumpDataVersion();
       } else {
         const err = await res.json().catch(() => ({}));
         showToast(err.error || 'Failed to complete handover.', 'error');
@@ -338,6 +357,44 @@ export function HandoverPage() {
             </table>
           </div>
         </div>
+
+        {/* Handover History */}
+        {handoverHistory.length > 0 && (
+          <div>
+            <SectionHeader title="RECENT HANDOVER HISTORY" subtitle="Last 5 signed-off handovers" />
+            <div className="space-y-2">
+              {handoverHistory.map(h => (
+                <div key={h.id} className="flex items-start gap-4 px-4 py-3 rounded-md border border-surface-border bg-surface-card text-xs">
+                  <div className="flex-shrink-0 mt-0.5">
+                    <History className="w-4 h-4 text-gray-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <span className="font-semibold text-gray-200">{h.outgoingSupervisor.name}</span>
+                      <span className="text-gray-600">→</span>
+                      <span className="font-semibold text-brand">{h.incomingSupervisor.name}</span>
+                      <span className={cn(
+                        'text-2xs px-1.5 py-0.5 rounded font-mono font-bold border',
+                        h.shift === 'NIGHT' ? 'text-blue-400 border-blue-800 bg-blue-950/30' : 'text-yellow-400 border-yellow-800 bg-yellow-950/20'
+                      )}>
+                        {h.shift}
+                      </span>
+                    </div>
+                    {h.notes && (
+                      <p className="text-2xs text-gray-500 truncate max-w-lg">{h.notes}</p>
+                    )}
+                    <div className="flex items-center gap-4 mt-1 text-2xs text-gray-600">
+                      <span>{h.activePermitCount} active permits</span>
+                      {h.suspendedCount > 0 && <span className="text-orange-400">{h.suspendedCount} suspended</span>}
+                      {h.gasAlertCount > 0 && <span className="text-red-400">{h.gasAlertCount} gas alerts</span>}
+                    </div>
+                  </div>
+                  <span className="text-2xs text-gray-600 flex-shrink-0">{formatRelative(h.completedAt)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
       </div>
     </PageShell>
