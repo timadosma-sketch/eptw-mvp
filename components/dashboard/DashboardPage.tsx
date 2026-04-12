@@ -12,16 +12,18 @@ import { DataTable, Column } from '@/components/shared/DataTable';
 import { PermitStatusBadge, RiskBadge, GasStatusBadge } from '@/components/shared/StatusBadge';
 import { Button } from '@/components/shared/Button';
 import { SectionHeader } from '@/components/shared/PageShell';
+import { ZoneBoardPanel } from './ZoneBoardPanel';
 import { useAppStore } from '@/lib/store/useAppStore';
 import { useT } from '@/lib/i18n/useT';
 import { rbac } from '@/lib/rbac';
 import { MOCK_DASHBOARD_METRICS } from '@/lib/mock/dashboard';
 import { MOCK_PERMITS } from '@/lib/mock/permits';
 import { MOCK_GAS_RECORDS } from '@/lib/mock/gas';
+import { MOCK_SIMOPS_CONFLICTS } from '@/lib/mock/simops';
 import { PERMIT_TYPE_CONFIG } from '@/lib/constants';
 import { formatDateTime, getTimeRemaining, truncate } from '@/lib/utils/formatters';
 import { formatRelative } from '@/lib/utils/formatters';
-import type { Permit, GasTestRecord, DashboardMetrics, AuditEntry } from '@/lib/types';
+import type { Permit, GasTestRecord, DashboardMetrics, AuditEntry, SIMOPSConflict } from '@/lib/types';
 import type { DayTrend } from '@/lib/dal/dashboard.dal';
 
 function usePermitColumns(onView: (id: string) => void, t: ReturnType<typeof useT>['t']): Column<Permit>[] {
@@ -99,6 +101,8 @@ export function DashboardPage() {
   const [gasRecords, setGasRecords] = useState<GasTestRecord[]>(MOCK_GAS_RECORDS);
   const [recentActivity, setRecentActivity] = useState<AuditEntry[]>([]);
   const [trend, setTrend] = useState<DayTrend[]>([]);
+  const [conflicts, setConflicts] = useState<SIMOPSConflict[]>(MOCK_SIMOPS_CONFLICTS);
+  const alerts = useAppStore(s => s.alerts); // synced from DB by AlertSyncer
 
   useEffect(() => {
     const load = () => {
@@ -120,6 +124,10 @@ export function DashboardPage() {
       fetch('/api/audit?pageSize=10')
         .then(r => r.ok ? r.json() : null)
         .then(d => { if (d?.data) setRecentActivity(d.data); })
+        .catch(() => {});
+      fetch('/api/simops?active=true')
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d?.data) setConflicts(d.data); })
         .catch(() => {});
     };
     load();
@@ -232,6 +240,12 @@ export function DashboardPage() {
             </div>
           </div>
         )}
+
+        {/* Zone Status Board */}
+        <div>
+          <SectionHeader title="PLANT ZONE STATUS" subtitle="Live zone overview — active permits, SIMOPS conflicts, gas alerts" />
+          <ZoneBoardPanel permits={allPermits} conflicts={conflicts} alerts={alerts} />
+        </div>
 
         {/* Tables */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">

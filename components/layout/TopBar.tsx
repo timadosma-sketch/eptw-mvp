@@ -17,7 +17,17 @@ export function TopBar() {
   const alerts            = useAppStore(s => s.alerts);
   const locale            = useAppStore(s => s.locale);
   const setLocale         = useAppStore(s => s.setLocale);
-  const acknowledgeAlert  = useAppStore(s => s.acknowledgeAlert);
+  const acknowledgeAlertLocal = useAppStore(s => s.acknowledgeAlert);
+
+  // Acknowledge both locally (instant UI) and in DB
+  const acknowledgeAlert = (id: string) => {
+    acknowledgeAlertLocal(id);
+    fetch(`/api/gas-tests/alerts/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acknowledgedBy: currentUser.id }),
+    }).catch(() => {});
+  };
   const dismissAlert      = useAppStore(s => s.dismissAlert);
   const [now, setNow]     = useState(new Date().toISOString());
   const [bellOpen, setBellOpen]   = useState(false);

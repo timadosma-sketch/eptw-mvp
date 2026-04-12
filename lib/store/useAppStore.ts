@@ -34,6 +34,7 @@ interface AppState {
 
   // Alerts / banner
   alerts: Alert[];
+  setAlerts: (alerts: Alert[]) => void;
   dismissAlert: (id: string) => void;
   acknowledgeAlert: (id: string) => void;
 
@@ -90,6 +91,7 @@ export const useAppStore = create<AppState>((set) => ({
   setWizardStep: (step) => set({ wizardStep: step }),
 
   alerts: MOCK_ALERTS,
+  setAlerts: (alerts) => set({ alerts }),
   dismissAlert: (id) => set(s => ({ alerts: s.alerts.filter(a => a.id !== id) })),
   acknowledgeAlert: (id) =>
     set(s => ({

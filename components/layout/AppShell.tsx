@@ -2,6 +2,7 @@
 
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
+import { AlertSyncer } from './AlertSyncer';
 import { ToastContainer } from '@/components/shared/Toast';
 
 interface AppShellProps {
@@ -21,6 +22,9 @@ export function AppShell({ children }: AppShellProps) {
           {children}
         </main>
       </div>
+
+      {/* Sync live DB alerts into Zustand every 30s */}
+      <AlertSyncer />
 
       {/* Global toast */}
       <ToastContainer />
