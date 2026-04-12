@@ -440,12 +440,13 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
 }
 
 export function CreatePermitWizard() {
-  const wizardOpen   = useAppStore(s => s.wizardOpen);
-  const wizardStep   = useAppStore(s => s.wizardStep);
-  const closeWizard  = useAppStore(s => s.closeWizard);
-  const setStep      = useAppStore(s => s.setWizardStep);
-  const showToast    = useAppStore(s => s.showToast);
-  const currentUser  = useAppStore(s => s.currentUser);
+  const wizardOpen      = useAppStore(s => s.wizardOpen);
+  const wizardStep      = useAppStore(s => s.wizardStep);
+  const closeWizard     = useAppStore(s => s.closeWizard);
+  const setStep         = useAppStore(s => s.setWizardStep);
+  const showToast       = useAppStore(s => s.showToast);
+  const currentUser     = useAppStore(s => s.currentUser);
+  const bumpDataVersion = useAppStore(s => s.bumpDataVersion);
   const { t } = useT();
 
   const [permitType,   setPermitType]   = useState<PermitType | null>(null);
@@ -511,6 +512,7 @@ export function CreatePermitWizard() {
         notes:                workDetails.notes ?? '',
       });
       closeWizard();
+      bumpDataVersion();
       showToast(`Permit ${permit.permitNumber} created as DRAFT — open it to submit for approval.`, 'success');
     } catch {
       showToast('Failed to submit permit. Please try again.', 'error');
