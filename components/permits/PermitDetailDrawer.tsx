@@ -80,9 +80,13 @@ export function PermitDetailDrawer() {
       .catch(() => {});
 
     fetch(`/api/isolation/${selectedPermitId}?byPermit=true`)
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.data?.[0]) setIsolation(d.data[0]); else setIsolation(null); })
-      .catch(() => {});
+      .then(r => (r.ok && r.status !== 404) ? r.json() : null)
+      .then(d => {
+        // Route returns cert directly (not wrapped), or null/404
+        if (d && typeof d === 'object' && !d.error && d.id) setIsolation(d);
+        else setIsolation(null);
+      })
+      .catch(() => setIsolation(null));
 
     fetch(`/api/gas-tests/${selectedPermitId}`)
       .then(r => r.ok ? r.json() : null)
