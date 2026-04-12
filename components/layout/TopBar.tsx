@@ -22,10 +22,10 @@ export function TopBar() {
   // Acknowledge both locally (instant UI) and in DB
   const acknowledgeAlert = (id: string) => {
     acknowledgeAlertLocal(id);
-    fetch(`/api/gas-tests/alerts/${id}`, {
+    fetch('/api/alerts', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ acknowledgedBy: currentUser.id }),
+      body: JSON.stringify({ id, acknowledgedBy: currentUser.id }),
     }).catch(() => {});
   };
   const dismissAlert      = useAppStore(s => s.dismissAlert);

@@ -27,7 +27,7 @@ export function AlertSyncer() {
 
       // 2. Fetch all current unacknowledged alerts and push to store
       try {
-        const r = await fetch('/api/gas-tests?alerts=true');
+        const r = await fetch('/api/alerts');
         if (!r.ok) return;
         const d = await r.json();
         if (Array.isArray(d?.data)) setAlerts(d.data as Alert[]);
