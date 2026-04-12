@@ -6,6 +6,7 @@ import {
   AlertTriangle, Lock, GitMerge, ShieldCheck,
   Activity, TrendingUp, Plus, Eye,
 } from 'lucide-react';
+import { cn } from '@/lib/utils/cn';
 import { KPICard } from '@/components/shared/KPICard';
 import { AlertPanel } from '@/components/shared/AlertStrip';
 import { DataTable, Column } from '@/components/shared/DataTable';
@@ -246,6 +247,53 @@ export function DashboardPage() {
           <SectionHeader title="PLANT ZONE STATUS" subtitle="Live zone overview — active permits, SIMOPS conflicts, gas alerts" />
           <ZoneBoardPanel permits={allPermits} conflicts={conflicts} alerts={alerts} />
         </div>
+
+        {/* Expiring soon alert strip */}
+        {(() => {
+          const expiring = allPermits.filter(p => {
+            if (p.status !== 'ACTIVE') return false;
+            const ms = new Date(p.validTo).getTime() - Date.now();
+            return ms > 0 && ms < 24 * 3_600_000;
+          }).sort((a, b) => new Date(a.validTo).getTime() - new Date(b.validTo).getTime());
+
+          if (expiring.length === 0) return null;
+          return (
+            <div>
+              <SectionHeader
+                title="⏰ EXPIRING WITHIN 24 HOURS"
+                subtitle={`${expiring.length} permit${expiring.length > 1 ? 's' : ''} require attention`}
+              />
+              <div className="space-y-1.5">
+                {expiring.map(p => {
+                  const ms      = new Date(p.validTo).getTime() - Date.now();
+                  const hLeft   = Math.floor(ms / 3_600_000);
+                  const mLeft   = Math.floor((ms % 3_600_000) / 60_000);
+                  const urgent  = ms < 2 * 3_600_000;
+                  return (
+                    <div
+                      key={p.id}
+                      onClick={() => openPermitDetail(p.id)}
+                      className={cn(
+                        'flex items-center gap-3 px-4 py-2.5 rounded border cursor-pointer transition-colors',
+                        urgent
+                          ? 'border-red-700/60 bg-red-950/20 hover:border-red-600'
+                          : 'border-yellow-700/50 bg-yellow-950/10 hover:border-yellow-600'
+                      )}
+                    >
+                      <Clock className={cn('w-4 h-4 flex-shrink-0', urgent ? 'text-red-400 animate-pulse' : 'text-yellow-400')} />
+                      <span className="font-mono text-xs font-bold text-brand">{p.permitNumber}</span>
+                      <span className="text-xs text-gray-300 flex-1 truncate">{p.title}</span>
+                      <span className="text-2xs text-gray-500">{p.location}</span>
+                      <span className={cn('text-xs font-mono font-bold ml-auto', urgent ? 'text-red-400' : 'text-yellow-400')}>
+                        {hLeft}h {mLeft}m
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Tables */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
