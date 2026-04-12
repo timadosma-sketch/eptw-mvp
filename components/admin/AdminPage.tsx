@@ -1,31 +1,211 @@
 'use client';
 
-import { Settings, Users, Bell, Shield, Lock } from 'lucide-react';
+import { Settings, Users, Bell, Shield, Lock, Plus, X, UserCog } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { PageShell } from '@/components/shared/PageShell';
 import { Button } from '@/components/shared/Button';
+import { Modal } from '@/components/shared/Modal';
 import { useT } from '@/lib/i18n/useT';
 import { useAppStore } from '@/lib/store/useAppStore';
 import { rbac } from '@/lib/rbac';
 import { MOCK_USERS } from '@/lib/mock/users';
 import { ROLE_CONFIG } from '@/lib/constants';
 import { cn } from '@/lib/utils/cn';
+import type { UserRole } from '@/lib/types';
 
 type AdminTab = 'users' | 'system' | 'alerts' | 'security';
 
-function UsersTab({ users }: { users: typeof MOCK_USERS }) {
+const ALL_ROLES: UserRole[] = [
+  'PERMIT_REQUESTER', 'AREA_AUTHORITY', 'ISSUING_AUTHORITY',
+  'HSE_OFFICER', 'GAS_TESTER', 'ISOLATION_AUTHORITY',
+  'SITE_SUPERVISOR', 'CONTRACTOR_REP', 'PLANT_OPS_MANAGER', 'SYSTEM_ADMIN',
+];
+
+interface AddUserForm {
+  name: string;
+  email: string;
+  role: UserRole;
+  department: string;
+  company: string;
+  phone: string;
+  isContractor: boolean;
+}
+
+const EMPTY_FORM: AddUserForm = {
+  name: '', email: '', role: 'PERMIT_REQUESTER',
+  department: 'Operations', company: 'Al-Noor Refinery',
+  phone: '', isContractor: false,
+};
+
+function AddUserModal({ open, onClose, onCreated }: {
+  open: boolean;
+  onClose: () => void;
+  onCreated: (user: any) => void;
+}) {
+  const [form, setForm] = useState<AddUserForm>(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const { t } = useT();
+
+  const handleClose = () => {
+    setForm(EMPTY_FORM);
+    setError('');
+    onClose();
+  };
+
+  const handleSubmit = async () => {
+    if (!form.name.trim() || !form.email.trim()) {
+      setError('Name and email are required.');
+      return;
+    }
+    setSaving(true);
+    setError('');
+    try {
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? 'Failed to create user.');
+        return;
+      }
+      onCreated(data);
+      handleClose();
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal open={open} onClose={handleClose} title="Add New User" size="md">
+      <div className="space-y-4">
+        {error && (
+          <div className="text-xs text-red-400 bg-red-900/20 border border-red-800/50 rounded px-3 py-2">
+            {error}
+          </div>
+        )}
+
+        {/* Name + Email */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-2xs text-gray-500 uppercase tracking-wider mb-1">Full Name *</label>
+            <input
+              type="text"
+              value={form.name}
+              onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+              placeholder="John Smith"
+              className="w-full bg-surface-panel border border-surface-border rounded px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-brand"
+            />
+          </div>
+          <div>
+            <label className="block text-2xs text-gray-500 uppercase tracking-wider mb-1">Email *</label>
+            <input
+              type="email"
+              value={form.email}
+              onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+              placeholder="john@refinery.com"
+              className="w-full bg-surface-panel border border-surface-border rounded px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-brand"
+            />
+          </div>
+        </div>
+
+        {/* Role */}
+        <div>
+          <label className="block text-2xs text-gray-500 uppercase tracking-wider mb-1">Role *</label>
+          <select
+            value={form.role}
+            onChange={e => setForm(f => ({ ...f, role: e.target.value as UserRole }))}
+            className="w-full bg-surface-panel border border-surface-border rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-brand"
+          >
+            {ALL_ROLES.map(r => (
+              <option key={r} value={r}>{ROLE_CONFIG[r].label}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Department + Company */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-2xs text-gray-500 uppercase tracking-wider mb-1">Department</label>
+            <input
+              type="text"
+              value={form.department}
+              onChange={e => setForm(f => ({ ...f, department: e.target.value }))}
+              className="w-full bg-surface-panel border border-surface-border rounded px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-brand"
+            />
+          </div>
+          <div>
+            <label className="block text-2xs text-gray-500 uppercase tracking-wider mb-1">Company</label>
+            <input
+              type="text"
+              value={form.company}
+              onChange={e => setForm(f => ({ ...f, company: e.target.value }))}
+              className="w-full bg-surface-panel border border-surface-border rounded px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-brand"
+            />
+          </div>
+        </div>
+
+        {/* Phone + Contractor */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-2xs text-gray-500 uppercase tracking-wider mb-1">Phone</label>
+            <input
+              type="tel"
+              value={form.phone}
+              onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+              placeholder="+7 (999) 000-0000"
+              className="w-full bg-surface-panel border border-surface-border rounded px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-brand"
+            />
+          </div>
+          <div className="flex items-center gap-2 pt-5">
+            <input
+              type="checkbox"
+              id="isContractor"
+              checked={form.isContractor}
+              onChange={e => setForm(f => ({ ...f, isContractor: e.target.checked }))}
+              className="w-4 h-4 accent-brand"
+            />
+            <label htmlFor="isContractor" className="text-xs text-gray-300 cursor-pointer">
+              Contractor (external)
+            </label>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex justify-end gap-2 pt-2 border-t border-surface-border">
+          <Button variant="ghost" size="sm" onClick={handleClose} disabled={saving}>Cancel</Button>
+          <Button variant="primary" size="sm" icon={Plus} loading={saving} onClick={handleSubmit}>
+            Create User
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function UsersTab({
+  users,
+  onAddUser,
+}: {
+  users: typeof MOCK_USERS;
+  onAddUser: () => void;
+}) {
   const { t } = useT();
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="text-xs text-gray-500">{users.length} {t.admin.usersCount}</div>
-        <Button variant="primary" size="sm">{t.admin.addUser}</Button>
+        <Button variant="primary" size="sm" icon={Plus} onClick={onAddUser}>{t.admin.addUser}</Button>
       </div>
       <div className="overflow-x-auto rounded-md border border-surface-border">
         <table className="w-full text-xs border-collapse">
           <thead>
             <tr className="bg-surface-panel border-b border-surface-border">
-              {['Employee ID', 'Name', 'Role', 'Department', 'Company', t.admin.contractor, t.common.actions].map(h => (
+              {['Employee ID', 'Name', 'Role', 'Department', 'Company', t.admin.contractor].map(h => (
                 <th key={h} className="px-4 py-2.5 text-left text-2xs text-gray-600 uppercase tracking-wider">{h}</th>
               ))}
             </tr>
@@ -39,12 +219,15 @@ function UsersTab({ users }: { users: typeof MOCK_USERS }) {
                     <div className="w-6 h-6 rounded-full bg-brand/20 border border-brand/30 flex items-center justify-center text-2xs font-bold text-brand">
                       {u.avatarInitials}
                     </div>
-                    <span className="text-gray-200">{u.name}</span>
+                    <div>
+                      <div className="text-gray-200">{u.name}</div>
+                      <div className="text-2xs text-gray-600">{u.email}</div>
+                    </div>
                   </div>
                 </td>
                 <td className="px-4 py-2.5">
                   <span className="text-xs bg-surface-panel border border-surface-border px-2 py-0.5 rounded text-gray-400 font-mono">
-                    {ROLE_CONFIG[u.role].shortLabel}
+                    {ROLE_CONFIG[u.role]?.shortLabel ?? u.role}
                   </span>
                 </td>
                 <td className="px-4 py-2.5 text-gray-400">{u.department}</td>
@@ -55,11 +238,13 @@ function UsersTab({ users }: { users: typeof MOCK_USERS }) {
                     : <span className="text-gray-600">{t.common.no}</span>
                   }
                 </td>
-                <td className="px-4 py-2.5">
-                  <Button variant="ghost" size="xs">{t.common.edit}</Button>
-                </td>
               </tr>
             ))}
+            {users.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-gray-600 text-xs">No users found</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -130,9 +315,12 @@ function AlertRulesTab() {
 
 export function AdminPage() {
   const { t } = useT();
-  const currentUser = useAppStore(s => s.currentUser);
-  const [tab, setTab] = useState<AdminTab>('users');
+  const currentUser    = useAppStore(s => s.currentUser);
+  const bumpDataVersion = useAppStore(s => s.bumpDataVersion);
+  const showToast      = useAppStore(s => s.showToast);
+  const [tab, setTab]  = useState<AdminTab>('users');
   const [users, setUsers] = useState(MOCK_USERS);
+  const [addOpen, setAddOpen] = useState(false);
 
   if (!rbac.canAccessAdmin(currentUser?.role)) {
     return (
@@ -153,6 +341,8 @@ export function AdminPage() {
     );
   }
 
+  // Must come after RBAC guard
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     fetch('/api/users')
       .then(r => r.ok ? r.json() : null)
@@ -167,8 +357,14 @@ export function AdminPage() {
     { id: 'security' as const, label: t.admin.security,     icon: Shield   },
   ];
 
+  const handleUserCreated = (newUser: any) => {
+    setUsers(prev => [...prev, newUser]);
+    bumpDataVersion();
+    showToast(`User ${newUser.name} created (${newUser.employeeId})`, 'success');
+  };
+
   const tabContent: Record<AdminTab, React.ReactNode> = {
-    users:    <UsersTab users={users} />,
+    users:    <UsersTab users={users} onAddUser={() => setAddOpen(true)} />,
     system:   <SystemTab />,
     alerts:   <AlertRulesTab />,
     security: (
@@ -183,7 +379,6 @@ export function AdminPage() {
   return (
     <PageShell title={t.admin.title} subtitle={t.admin.subtitle}>
       <div className="space-y-5">
-
         <div className="flex items-center gap-0 border-b border-surface-border">
           {ADMIN_TABS.map(tabItem => {
             const Icon = tabItem.icon;
@@ -206,8 +401,13 @@ export function AdminPage() {
         </div>
 
         {tabContent[tab]}
-
       </div>
+
+      <AddUserModal
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        onCreated={handleUserCreated}
+      />
     </PageShell>
   );
 }
