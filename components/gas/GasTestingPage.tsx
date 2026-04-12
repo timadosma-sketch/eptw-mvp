@@ -317,7 +317,11 @@ export function GasTestingPage() {
                   alert={a}
                   onAcknowledge={async (id) => {
                     try {
-                      const res = await fetch(`/api/gas-tests/alerts/${id}`, { method: 'PATCH' });
+                      const res = await fetch('/api/alerts', {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id }),
+                      });
                       if (res.ok) { loadGasData(); bumpDataVersion(); }
                     } catch { /* silent */ }
                   }}

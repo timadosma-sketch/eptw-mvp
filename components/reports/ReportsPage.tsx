@@ -67,6 +67,24 @@ async function downloadGasCsv() {
   downloadCsv(`gas-tests-${new Date().toISOString().slice(0, 10)}.csv`, buildCsv(headers, rows));
 }
 
+async function downloadHseCsv() {
+  const res  = await fetch('/api/hse?pageSize=500');
+  const json = res.ok ? await res.json() : null;
+  const incidents: Array<{
+    id: string; type: string; status: string; description: string;
+    location: string; immediateActions: string; injuries: string;
+    reportedBy: string; reportedAt: string; closedAt?: string;
+  }> = json?.data ?? [];
+  const headers = ['Incident ID', 'Type', 'Status', 'Description', 'Location', 'Immediate Actions', 'Injuries', 'Reported By', 'Reported At', 'Closed At'];
+  const rows = incidents.map(i => [
+    i.id, i.type.replace(/_/g, ' '), i.status.replace(/_/g, ' '),
+    i.description, i.location, i.immediateActions ?? '—',
+    i.injuries ?? 'NIL', i.reportedBy, formatDateTime(i.reportedAt),
+    i.closedAt ? formatDateTime(i.closedAt) : '—',
+  ]);
+  downloadCsv(`hse-incidents-${new Date().toISOString().slice(0, 10)}.csv`, buildCsv(headers, rows));
+}
+
 async function downloadIsolationCsv() {
   const res  = await fetch('/api/isolation?pageSize=200');
   const json = res.ok ? await res.json() : null;
@@ -149,6 +167,9 @@ export function ReportsPage() {
       } else if (id === 'isolation') {
         await downloadIsolationCsv();
         showToast('Isolation certificate log exported to CSV.', 'success');
+      } else if (id === 'hse-csv') {
+        await downloadHseCsv();
+        showToast('HSE incident register exported to CSV.', 'success');
       } else {
         showToast('This report type is coming soon.', 'info');
       }
@@ -166,7 +187,7 @@ export function ReportsPage() {
     { id: 'isolation',   label: 'Isolation Certificate Log',   desc: 'All isolation certs — current period',  format: 'CSV', live: true  },
     { id: 'permits-csv', label: 'Permit Register Export',      desc: 'Full permit register in spreadsheet',   format: 'CSV', live: true  },
     { id: 'audit',       label: 'Audit Trail Export',          desc: 'Full tamper-evident log export',         format: 'PDF', live: true  },
-    { id: 'hse',         label: 'HSE KPI Dashboard',           desc: 'Incident rates, safety scores',          format: 'PDF', live: false },
+    { id: 'hse-csv',     label: 'HSE Incident Register',        desc: 'All reported incidents in CSV',          format: 'CSV', live: true  },
   ];
 
   return (
