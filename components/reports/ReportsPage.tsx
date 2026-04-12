@@ -223,6 +223,86 @@ export function ReportsPage() {
 
         </div>
 
+        {/* Active Permit Gantt Timeline */}
+        {permits.filter(p => ['ACTIVE', 'APPROVED', 'SUBMITTED', 'UNDER_REVIEW'].includes(p.status)).length > 0 && (
+          <div>
+            <SectionHeader title="ACTIVE PERMIT TIMELINE" subtitle="Validity windows for in-progress permits" />
+            <div className="p-4 rounded-md border border-surface-border bg-surface-card overflow-x-auto">
+              {(() => {
+                const activePermits = permits
+                  .filter(p => ['ACTIVE', 'APPROVED', 'SUBMITTED', 'UNDER_REVIEW'].includes(p.status))
+                  .sort((a, b) => new Date(a.validFrom).getTime() - new Date(b.validFrom).getTime())
+                  .slice(0, 15);
+
+                if (activePermits.length === 0) return null;
+
+                const earliest = Math.min(...activePermits.map(p => new Date(p.validFrom).getTime()));
+                const latest   = Math.max(...activePermits.map(p => new Date(p.validTo).getTime()));
+                const span     = Math.max(latest - earliest, 1);
+
+                const barColor = (status: PermitStatus) => {
+                  if (status === 'ACTIVE')       return 'bg-emerald-600/80';
+                  if (status === 'APPROVED')     return 'bg-blue-600/80';
+                  if (status === 'UNDER_REVIEW') return 'bg-yellow-600/80';
+                  return 'bg-gray-600/60';
+                };
+
+                // Time axis labels
+                const steps = 5;
+                const timeLabels = Array.from({ length: steps + 1 }, (_, i) => {
+                  const ts = earliest + (span / steps) * i;
+                  return new Date(ts).toLocaleDateString('en', { month: 'short', day: 'numeric' });
+                });
+
+                return (
+                  <div>
+                    {/* Time axis */}
+                    <div className="flex items-center mb-2 ml-36">
+                      {timeLabels.map((lbl, i) => (
+                        <div key={i} className="flex-1 text-2xs text-gray-600 font-mono">{lbl}</div>
+                      ))}
+                    </div>
+
+                    {/* Permit rows */}
+                    <div className="space-y-1.5">
+                      {activePermits.map(p => {
+                        const start = (new Date(p.validFrom).getTime() - earliest) / span * 100;
+                        const width = Math.max(
+                          1,
+                          (new Date(p.validTo).getTime() - new Date(p.validFrom).getTime()) / span * 100
+                        );
+                        return (
+                          <div key={p.id} className="flex items-center gap-2">
+                            <div className="w-36 flex-shrink-0 text-right">
+                              <span className="text-2xs font-mono text-brand">{p.permitNumber}</span>
+                            </div>
+                            <div className="flex-1 h-6 bg-surface-panel rounded border border-surface-border relative overflow-hidden">
+                              <div
+                                className={`absolute h-full rounded ${barColor(p.status)} flex items-center px-1.5 overflow-hidden`}
+                                style={{ left: `${start}%`, width: `${width}%`, minWidth: '4px' }}
+                                title={`${p.permitNumber} — ${p.status} — ${p.title}`}
+                              >
+                                <span className="text-2xs text-white font-medium truncate">{p.title}</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Legend */}
+                    <div className="flex items-center gap-4 mt-3 text-2xs text-gray-600">
+                      <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-emerald-600/80 inline-block" /> Active</span>
+                      <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-blue-600/80 inline-block" /> Approved</span>
+                      <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-yellow-600/80 inline-block" /> Under Review</span>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        )}
+
         <div>
           <SectionHeader title={t.reports.templates} subtitle={t.reports.templatesSubtitle} />
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

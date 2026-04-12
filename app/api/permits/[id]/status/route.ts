@@ -7,6 +7,97 @@ import { logAction } from '@/lib/dal/audit.dal';
 export const dynamic = 'force-dynamic';
 import { db } from '@/lib/db';
 import type { PermitStatus, UserRole } from '@/lib/types';
+import type { PermitType } from '@prisma/client';
+
+// ─── SIMOPS Compatibility Matrix ─────────────────────────────────────────────
+// Based on IEC/ISA oil & gas simultaneous operations standard
+
+type SIMOPSCompat = 'COMPATIBLE' | 'CONDITIONAL' | 'PROHIBITED';
+
+const SIMOPS_MATRIX: Partial<Record<string, Partial<Record<string, SIMOPSCompat>>>> = {
+  HOT_WORK:       { HOT_WORK: 'CONDITIONAL', COLD_WORK: 'COMPATIBLE', CONFINED_SPACE: 'PROHIBITED', ELECTRICAL: 'CONDITIONAL', LINE_BREAKING: 'PROHIBITED', LIFTING: 'CONDITIONAL', RADIOGRAPHY: 'PROHIBITED' },
+  COLD_WORK:      { HOT_WORK: 'COMPATIBLE', COLD_WORK: 'COMPATIBLE', CONFINED_SPACE: 'CONDITIONAL', ELECTRICAL: 'COMPATIBLE', LINE_BREAKING: 'COMPATIBLE', LIFTING: 'COMPATIBLE', RADIOGRAPHY: 'PROHIBITED' },
+  CONFINED_SPACE: { HOT_WORK: 'PROHIBITED', COLD_WORK: 'CONDITIONAL', CONFINED_SPACE: 'PROHIBITED', ELECTRICAL: 'PROHIBITED', LINE_BREAKING: 'PROHIBITED', LIFTING: 'PROHIBITED', RADIOGRAPHY: 'PROHIBITED' },
+  ELECTRICAL:     { HOT_WORK: 'CONDITIONAL', COLD_WORK: 'COMPATIBLE', CONFINED_SPACE: 'PROHIBITED', ELECTRICAL: 'CONDITIONAL', LINE_BREAKING: 'CONDITIONAL', LIFTING: 'COMPATIBLE', RADIOGRAPHY: 'PROHIBITED' },
+  LINE_BREAKING:  { HOT_WORK: 'PROHIBITED', COLD_WORK: 'COMPATIBLE', CONFINED_SPACE: 'PROHIBITED', ELECTRICAL: 'CONDITIONAL', LINE_BREAKING: 'CONDITIONAL', LIFTING: 'COMPATIBLE', RADIOGRAPHY: 'PROHIBITED' },
+  LIFTING:        { HOT_WORK: 'CONDITIONAL', COLD_WORK: 'COMPATIBLE', CONFINED_SPACE: 'PROHIBITED', ELECTRICAL: 'COMPATIBLE', LINE_BREAKING: 'COMPATIBLE', LIFTING: 'CONDITIONAL', RADIOGRAPHY: 'PROHIBITED' },
+  RADIOGRAPHY:    { HOT_WORK: 'PROHIBITED', COLD_WORK: 'PROHIBITED', CONFINED_SPACE: 'PROHIBITED', ELECTRICAL: 'PROHIBITED', LINE_BREAKING: 'PROHIBITED', LIFTING: 'PROHIBITED', RADIOGRAPHY: 'PROHIBITED' },
+};
+
+/**
+ * When a permit is activated, scan other ACTIVE permits in the same zone
+ * and auto-create SIMOPS conflict records for CONDITIONAL / PROHIBITED pairs.
+ */
+async function runSimopsCheck(
+  activatedPermitId:     string,
+  activatedPermitNumber: string,
+  activatedType:         string,
+  zone:                  string,
+  raisedById:            string,
+) {
+  if (!zone) return; // no zone = no auto-check
+
+  // Find other ACTIVE permits in the same zone
+  const others = await db.permit.findMany({
+    where: {
+      id:         { not: activatedPermitId },
+      simopsZone: zone,
+      status:     'ACTIVE',
+    },
+    select: { id: true, permitNumber: true, type: true },
+  });
+
+  for (const other of others) {
+    const compat = SIMOPS_MATRIX[activatedType]?.[other.type] ?? 'COMPATIBLE';
+    if (compat === 'COMPATIBLE') continue;
+
+    // Check if an active conflict for this pair already exists
+    const existing = await db.sIMOPSConflict.findFirst({
+      where: {
+        isActive: true,
+        OR: [
+          { permitAId: activatedPermitId, permitBId: other.id },
+          { permitAId: other.id, permitBId: activatedPermitId },
+        ],
+      },
+    });
+    if (existing) continue;
+
+    // Create new SIMOPS conflict
+    await db.sIMOPSConflict.create({
+      data: {
+        permitAId:     activatedPermitId,
+        permitANumber: activatedPermitNumber,
+        permitAType:   activatedType as PermitType,
+        permitBId:     other.id,
+        permitBNumber: other.permitNumber,
+        permitBType:   other.type,
+        compatibility: compat,
+        zone,
+        raisedById,
+        conditions:    compat === 'CONDITIONAL'
+          ? ['Simultaneous operations require HOD sign-off', 'Ensure communication between work teams']
+          : ['STOP WORK — incompatible simultaneous operations. Separate permits and clear zone.'],
+        resolution:    '',
+        isActive:      true,
+      },
+    });
+
+    // Create an alert for PROHIBITED conflicts
+    if (compat === 'PROHIBITED') {
+      await db.alert.create({
+        data: {
+          severity:    'CRITICAL',
+          title:       `SIMOPS CONFLICT — ${activatedPermitNumber} ↔ ${other.permitNumber}`,
+          message:     `PROHIBITED simultaneous operations in zone ${zone}: ${activatedType.replace('_', ' ')} and ${other.type.replace('_', ' ')}. Stop work and resolve immediately.`,
+          permitId:    activatedPermitId,
+          permitNumber: activatedPermitNumber,
+          autoExpires: false,
+        },
+      });
+    }
+  }
+}
 
 // Map permit status → audit action
 const STATUS_AUDIT_ACTION: Partial<Record<string, string>> = {
@@ -165,6 +256,19 @@ export async function PATCH(
       }
       // Automatically advance to UNDER_REVIEW so approvers see it immediately
       await updatePermitStatus(params.id, 'UNDER_REVIEW');
+    }
+
+    // When permit is ACTIVATED, run SIMOPS auto-detection
+    if (status === 'ACTIVE' && permit.simopsZone) {
+      const sessionUser = (await auth())?.user as Record<string, unknown> | undefined;
+      const raisedById  = (sessionUser?.id as string | undefined) ?? 'usr-001';
+      runSimopsCheck(
+        params.id,
+        permit.permitNumber,
+        permit.type,
+        permit.simopsZone,
+        raisedById,
+      ).catch(err => console.error('[simops-check]', err)); // fire-and-forget
     }
 
     // Fire-and-forget email notification

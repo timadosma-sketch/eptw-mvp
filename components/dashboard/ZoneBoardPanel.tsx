@@ -11,7 +11,7 @@
  */
 
 import { cn } from '@/lib/utils/cn';
-import { GitMerge, Wind, FileText } from 'lucide-react';
+import { GitMerge, Wind, FileText, Users } from 'lucide-react';
 import type { Permit, SIMOPSConflict, Alert } from '@/lib/types';
 
 // Ordered list of known facility zones — extend as needed
@@ -35,6 +35,7 @@ interface ZoneInfo {
   activePermits: Permit[];
   conflicts: SIMOPSConflict[];
   gasAlerts: Alert[];
+  workerCount: number;
 }
 
 type ZoneStatus = 'clear' | 'active' | 'conditional' | 'prohibited';
@@ -69,23 +70,29 @@ interface Props {
 
 export function ZoneBoardPanel({ permits, conflicts, alerts }: Props) {
   // Build per-zone data
-  const zones: ZoneInfo[] = FACILITY_ZONES.map(z => ({
-    ...z,
-    activePermits: permits.filter(p =>
+  const zones: ZoneInfo[] = FACILITY_ZONES.map(z => {
+    const activePermits = permits.filter(p =>
       p.simopsZone === z.id && ['ACTIVE', 'APPROVED', 'UNDER_REVIEW'].includes(p.status)
-    ),
-    conflicts: conflicts.filter(c => c.zone === z.id && c.isActive),
-    gasAlerts: alerts.filter(a => !a.acknowledged),
-  }));
+    );
+    return {
+      ...z,
+      activePermits,
+      conflicts:   conflicts.filter(c => c.zone === z.id && c.isActive),
+      gasAlerts:   alerts.filter(a => !a.acknowledged),
+      workerCount: activePermits.reduce((sum, p) => sum + (p.workerCount ?? 0), 0),
+    };
+  });
 
   const activeZoneCount     = zones.filter(z => zoneStatus(z) !== 'clear').length;
   const prohibitedZoneCount = zones.filter(z => zoneStatus(z) === 'prohibited').length;
+  const totalWorkersOnSite  = zones.reduce((sum, z) => sum + z.workerCount, 0);
 
   return (
     <div>
       {/* Summary strip */}
-      <div className="flex items-center gap-4 mb-3 text-xs text-gray-500">
+      <div className="flex items-center gap-4 mb-3 text-xs text-gray-500 flex-wrap">
         <span><span className="font-bold text-white">{activeZoneCount}</span> zones with active work</span>
+        <span><span className="font-bold text-brand">{totalWorkersOnSite}</span> workers on site</span>
         {prohibitedZoneCount > 0 && (
           <span className="text-red-400 font-semibold">⚠ {prohibitedZoneCount} zone{prohibitedZoneCount > 1 ? 's' : ''} restricted</span>
         )}
@@ -112,11 +119,17 @@ export function ZoneBoardPanel({ permits, conflicts, alerts }: Props) {
               <div className="text-xs font-semibold text-gray-200 leading-snug mb-1.5 pr-3">{zone.label}</div>
 
               {/* Icons row */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 {zone.activePermits.length > 0 && (
                   <span className="flex items-center gap-0.5 text-2xs text-brand font-mono">
                     <FileText className="w-3 h-3" />
                     {zone.activePermits.length}
+                  </span>
+                )}
+                {zone.workerCount > 0 && (
+                  <span className="flex items-center gap-0.5 text-2xs text-gray-400 font-mono">
+                    <Users className="w-3 h-3" />
+                    {zone.workerCount}
                   </span>
                 )}
                 {zone.conflicts.length > 0 && (
