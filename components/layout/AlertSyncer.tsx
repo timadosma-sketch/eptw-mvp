@@ -1,10 +1,14 @@
 'use client';
 
 /**
- * AlertSyncer — mounts inside AppShell and keeps the Zustand alert store
- * in sync with live DB alerts from GET /api/gas-tests?alerts=true.
+ * AlertSyncer — mounts inside AppShell and:
+ *   1. Keeps the Zustand alert store in sync with live DB alerts
+ *      from GET /api/gas-tests?alerts=true  (all Alert table rows)
+ *   2. Triggers the server-side safety check on every poll cycle:
+ *      POST /api/alerts/check  — creates DB alerts for expiring permits
+ *      and overdue gas tests so they surface in the TopBar bell.
  *
- * Polls every 30 s so the TopBar notification bell always shows real data
+ * Polls every 30 s so the notification bell always shows real data
  * without a manual page refresh.
  */
 
@@ -17,15 +21,19 @@ export function AlertSyncer() {
   const dataVersion = useAppStore(s => s.dataVersion);
 
   useEffect(() => {
-    const sync = () => {
-      fetch('/api/gas-tests?alerts=true')
-        .then(r => r.ok ? r.json() : null)
-        .then(d => {
-          if (Array.isArray(d?.data)) {
-            setAlerts(d.data as Alert[]);
-          }
-        })
-        .catch(() => { /* keep current state on network error */ });
+    const sync = async () => {
+      // 1. Run server-side safety checks (fire-and-forget; errors suppressed)
+      fetch('/api/alerts/check', { method: 'POST' }).catch(() => {});
+
+      // 2. Fetch all current unacknowledged alerts and push to store
+      try {
+        const r = await fetch('/api/gas-tests?alerts=true');
+        if (!r.ok) return;
+        const d = await r.json();
+        if (Array.isArray(d?.data)) setAlerts(d.data as Alert[]);
+      } catch {
+        /* keep current state on network error */
+      }
     };
 
     sync();

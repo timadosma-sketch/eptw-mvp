@@ -266,7 +266,25 @@ export function ApprovalsPage() {
     {
       key: 'title',
       header: t.handover.work,
-      render: a => <div className="text-xs text-gray-300">{a.permitTitle}</div>,
+      render: a => (
+        <div>
+          <div className="text-xs text-gray-300">{a.permitTitle}</div>
+          {a.comments && (
+            <div className="text-2xs text-gray-500 mt-0.5 italic truncate max-w-xs" title={a.comments}>
+              "{a.comments}"
+            </div>
+          )}
+          {a.conditions && a.conditions.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {a.conditions.map((c, i) => (
+                <span key={i} className="text-2xs px-1.5 py-0.5 rounded bg-brand/10 border border-brand/20 text-brand">
+                  {c}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      ),
     },
     {
       key: 'decision',
