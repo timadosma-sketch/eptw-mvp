@@ -66,6 +66,7 @@ export function PermitDetailDrawer() {
   }>>({});
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelReason,    setCancelReason]    = useState('');
+  const [auditLog,        setAuditLog]        = useState<Array<{id:string;action:string;performedAt:string;performedBy?:{name?:string;role?:string};changes?:Array<{field:string;from?:unknown;to?:unknown}>}>>([]);
 
   useEffect(() => {
     if (!selectedPermitId || !permitDetailOpen) return;
@@ -97,6 +98,12 @@ export function PermitDetailDrawer() {
       })
       .catch(() => {});
     setApprovalComments('');
+
+    // Fetch audit history for this permit
+    fetch(`/api/audit?entityId=${selectedPermitId}&pageSize=20`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.data) setAuditLog(d.data); else setAuditLog([]); })
+      .catch(() => setAuditLog([]));
   }, [selectedPermitId, permitDetailOpen]);
 
   // Show drawer with loading skeleton when open but permit not yet loaded
@@ -555,6 +562,59 @@ export function PermitDetailDrawer() {
         {permit.notes && (
           <Section title={t.permitDetail.notes}>
             <p className="text-xs text-gray-400 leading-relaxed">{permit.notes}</p>
+          </Section>
+        )}
+
+        {/* Activity timeline */}
+        {auditLog.length > 0 && (
+          <Section title="Activity Timeline">
+            <div className="relative pl-4">
+              <div className="absolute left-1.5 top-0 bottom-0 w-px bg-surface-border" />
+              <div className="space-y-3">
+                {auditLog.map((entry, i) => {
+                  const isFirst = i === 0;
+                  const actionLabel = entry.action.replace(/_/g, ' ');
+                  const actionColor =
+                    entry.action.includes('APPROVED') || entry.action.includes('ACTIVATED') || entry.action.includes('CLOSED')
+                      ? 'text-emerald-400'
+                      : entry.action.includes('REJECTED') || entry.action.includes('CANCELLED') || entry.action.includes('SUSPENDED')
+                      ? 'text-red-400'
+                      : entry.action.includes('SUBMITTED') || entry.action.includes('APPLIED')
+                      ? 'text-blue-400'
+                      : 'text-gray-400';
+                  const dotColor =
+                    entry.action.includes('APPROVED') || entry.action.includes('ACTIVATED') ? 'bg-emerald-500' :
+                    entry.action.includes('REJECTED') || entry.action.includes('CANCELLED')  ? 'bg-red-500' :
+                    entry.action.includes('SUBMITTED')                                        ? 'bg-blue-500' :
+                    isFirst ? 'bg-brand' : 'bg-surface-border';
+                  return (
+                    <div key={entry.id} className="flex items-start gap-3">
+                      <span className={cn('w-3 h-3 rounded-full flex-shrink-0 mt-0.5 border-2 border-surface-base', dotColor)} />
+                      <div className="flex-1 min-w-0 pb-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={cn('text-xs font-semibold', actionColor)}>{actionLabel}</span>
+                          {entry.performedBy?.name && (
+                            <span className="text-2xs text-gray-500">by {entry.performedBy.name}</span>
+                          )}
+                          <span className="text-2xs text-gray-600 ml-auto">{formatDateTime(entry.performedAt)}</span>
+                        </div>
+                        {entry.changes && entry.changes.length > 0 && (
+                          <div className="mt-0.5 space-y-0.5">
+                            {entry.changes.map((c, ci) => (
+                              <div key={ci} className="text-2xs font-mono text-gray-600">
+                                {c.field}: <span className="text-red-400 line-through">{String(c.from ?? '—')}</span>
+                                {' → '}
+                                <span className="text-emerald-400">{String(c.to ?? '—')}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </Section>
         )}
 
