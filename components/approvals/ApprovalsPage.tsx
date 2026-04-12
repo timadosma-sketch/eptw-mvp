@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CheckCircle2, XCircle, RotateCcw, AlertTriangle } from 'lucide-react';
-import { PageShell } from '@/components/shared/PageShell';
+import { CheckCircle2, XCircle, RotateCcw, AlertTriangle, Clock, Users } from 'lucide-react';
+import { PageShell, SectionHeader } from '@/components/shared/PageShell';
+import { KPICard } from '@/components/shared/KPICard';
 import { DataTable, Column } from '@/components/shared/DataTable';
 import { PriorityBadge } from '@/components/shared/StatusBadge';
 import { Button } from '@/components/shared/Button';
@@ -195,6 +196,25 @@ export function ApprovalsPage() {
     }
   };
 
+  const overdueCount  = pending.filter(a => a.isOverdue || new Date(a.dueBy) < new Date()).length;
+  const p0Count       = pending.filter(a => a.priority === 'P0').length;
+  const avgAgeHours   = pending.length > 0
+    ? Math.round(pending.reduce((sum, a) => sum + (Date.now() - new Date(a.createdAt ?? a.dueBy).getTime()) / 3_600_000, 0) / pending.length)
+    : 0;
+
+  // SLA remaining label
+  const slaRemaining = (dueBy: string, isOverdue: boolean): string => {
+    const diffMs = new Date(dueBy).getTime() - Date.now();
+    if (isOverdue || diffMs < 0) {
+      const hrs = Math.abs(Math.floor(diffMs / 3_600_000));
+      return `${hrs}h overdue`;
+    }
+    const h = Math.floor(diffMs / 3_600_000);
+    const m = Math.floor((diffMs % 3_600_000) / 60_000);
+    if (h > 0) return `${h}h ${m}m left`;
+    return `${m}m left`;
+  };
+
   const pendingColumns: Column<Approval>[] = [
     {
       key: 'priority',
@@ -233,13 +253,22 @@ export function ApprovalsPage() {
     {
       key: 'due',
       header: t.approvals.dueBy,
-      width: '130px',
-      render: a => (
-        <div className="flex items-center gap-1.5 text-xs font-mono">
-          {a.isOverdue && <AlertTriangle className="w-3 h-3 text-red-400 flex-shrink-0" />}
-          <span className={a.isOverdue ? 'text-red-400' : 'text-gray-400'}>{formatDateTime(a.dueBy)}</span>
-        </div>
-      ),
+      width: '150px',
+      render: a => {
+        const overdue = a.isOverdue || new Date(a.dueBy) < new Date();
+        const soonish = !overdue && new Date(a.dueBy).getTime() - Date.now() < 2 * 3_600_000;
+        return (
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-1.5 text-xs font-mono">
+              {overdue && <AlertTriangle className="w-3 h-3 text-red-400 flex-shrink-0 animate-pulse" />}
+              <span className={overdue ? 'text-red-400 font-bold' : soonish ? 'text-yellow-400' : 'text-gray-400'}>
+                {slaRemaining(a.dueBy, a.isOverdue)}
+              </span>
+            </div>
+            <div className="text-2xs text-gray-600 font-mono">{formatDateTime(a.dueBy)}</div>
+          </div>
+        );
+      },
     },
     {
       key: 'actions',
@@ -321,6 +350,14 @@ export function ApprovalsPage() {
         title={t.approvals.title}
         subtitle={`${pending.length} ${t.approvals.pending.toLowerCase()} · ${history.length} decided`}
       >
+        {/* KPI strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+          <KPICard label="Pending Approvals"  value={pending.length}  icon={Clock}         variant={pending.length > 0 ? 'warning' : 'success'} />
+          <KPICard label="Overdue"            value={overdueCount}    icon={AlertTriangle} variant={overdueCount > 0 ? 'danger' : 'default'} />
+          <KPICard label="P0 Critical"        value={p0Count}         icon={AlertTriangle} variant={p0Count > 0 ? 'danger' : 'default'} />
+          <KPICard label="Avg Age (hrs)"      value={avgAgeHours}     icon={Users}         variant="default" />
+        </div>
+
         {!canApprove && (
           <div className="flex items-center gap-2 mb-4 px-3 py-2.5 rounded border border-yellow-700/50 bg-yellow-900/20 text-xs text-yellow-400">
             <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
