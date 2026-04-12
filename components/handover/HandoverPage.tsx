@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { RefreshCw, CheckCircle2, AlertTriangle, FileText, Users } from 'lucide-react';
 import { PageShell, SectionHeader } from '@/components/shared/PageShell';
 import { KPICard } from '@/components/shared/KPICard';
@@ -11,15 +11,76 @@ import { MOCK_PERMITS } from '@/lib/mock/permits';
 import { MOCK_GAS_ALERTS } from '@/lib/mock/gas';
 import { MOCK_SIMOPS_CONFLICTS } from '@/lib/mock/simops';
 import { cn } from '@/lib/utils/cn';
+import { isExpiringSoon } from '@/lib/utils/formatters';
+import type { Permit, Alert, SIMOPSConflict } from '@/lib/types/index';
 
-const SHIFT_ITEMS = [
-  { id: '1', category: 'PERMIT',   description: 'PTW-2024-0841 — Hot Work E-101: Active, gas tests current, fire watch in place. Expires 19:00.',          priority: 'HIGH',   actionRequired: false },
-  { id: '2', category: 'PERMIT',   description: 'PTW-2024-0842 — CSE T-301: Approved, toolbox talk NOT completed. Do not activate until TBT done.',         priority: 'CRITICAL', actionRequired: true  },
-  { id: '3', category: 'SAFETY',   description: 'PTW-2024-0844 — Line Break HCU SUSPENDED due to LEL exceedance at 11:42. Area cleared. Investigate source.',priority: 'CRITICAL', actionRequired: true  },
-  { id: '4', category: 'PERMIT',   description: 'PTW-2024-0839 — Lifting P-401: Active, completes by 17:00.',                                                priority: 'MEDIUM', actionRequired: false },
-  { id: '5', category: 'EQUIPMENT', description: 'Gas detector GD-HCU-05 requires battery replacement — report raised, unit taken offline.',                priority: 'HIGH',   actionRequired: true  },
-  { id: '6', category: 'SAFETY',   description: 'SIMOPS conflict Zone A3: Two hot work permits. Conditional — 15m separation confirmed.',                    priority: 'MEDIUM', actionRequired: false },
-];
+interface ShiftItem {
+  id: string;
+  category: string;
+  description: string;
+  priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  actionRequired: boolean;
+}
+
+function buildShiftItems(
+  permits: Permit[],
+  alerts: Alert[],
+  conflicts: SIMOPSConflict[],
+): ShiftItem[] {
+  const items: ShiftItem[] = [];
+
+  // Suspended permits — always CRITICAL
+  permits.filter(p => p.status === 'SUSPENDED').forEach(p => {
+    items.push({
+      id: `suspended-${p.id}`, category: 'PERMIT',
+      description: `${p.permitNumber} — ${p.title} is SUSPENDED. Investigate root cause before re-activating.`,
+      priority: 'CRITICAL', actionRequired: true,
+    });
+  });
+
+  // Active permits expiring within 2 hours
+  permits.filter(p => p.status === 'ACTIVE' && isExpiringSoon(p.validTo, 2)).forEach(p => {
+    const expiresAt = new Date(p.validTo).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    items.push({
+      id: `expiring-${p.id}`, category: 'PERMIT',
+      description: `${p.permitNumber} — ${p.title} expires at ${expiresAt}. Extend or close before expiry.`,
+      priority: 'HIGH', actionRequired: true,
+    });
+  });
+
+  // Unacknowledged gas alerts
+  alerts.forEach(a => {
+    items.push({
+      id: `alert-${a.id}`, category: 'SAFETY',
+      description: `Gas Alert: ${a.title} — ${a.message}`,
+      priority: a.severity === 'CRITICAL' || a.severity === 'DANGER' ? 'CRITICAL' : 'HIGH',
+      actionRequired: true,
+    });
+  });
+
+  // Active SIMOPS conflicts
+  conflicts.forEach(c => {
+    items.push({
+      id: `simops-${c.id}`, category: 'SAFETY',
+      description: `SIMOPS: ${c.permitANumber} ↔ ${c.permitBNumber} — ${c.compatibility} in Zone ${c.zone}.`,
+      priority: c.compatibility === 'PROHIBITED' ? 'CRITICAL' : 'MEDIUM',
+      actionRequired: c.compatibility === 'PROHIBITED',
+    });
+  });
+
+  // Approved permits pending activation
+  permits.filter(p => p.status === 'APPROVED').forEach(p => {
+    items.push({
+      id: `approved-${p.id}`, category: 'PERMIT',
+      description: `${p.permitNumber} — ${p.title} is APPROVED and awaiting activation. Activate when work crew is ready.`,
+      priority: 'MEDIUM', actionRequired: false,
+    });
+  });
+
+  // Sort: CRITICAL first, then HIGH, MEDIUM, LOW
+  const ORDER = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
+  return items.sort((a, b) => ORDER[a.priority] - ORDER[b.priority]);
+}
 
 const CATEGORY_COLORS: Record<string, string> = {
   PERMIT:    'text-blue-400',
@@ -83,6 +144,11 @@ export function HandoverPage() {
   const suspendedCount  = permits.filter(p => p.status === 'SUSPENDED').length;
   const gasAlertsCount  = gasAlerts.length;
   const conflictCount   = conflicts.length;
+
+  const shiftItems = useMemo(
+    () => buildShiftItems(permits, gasAlerts, conflicts),
+    [permits, gasAlerts, conflicts],
+  );
 
   const handleCompleteHandover = async () => {
     if (!incomingId) {
@@ -198,7 +264,12 @@ export function HandoverPage() {
           <div>
             <SectionHeader title={t.handover.criticalItems} subtitle="Items requiring incoming shift attention" />
             <div className="space-y-2">
-              {SHIFT_ITEMS.map(item => (
+              {shiftItems.length === 0 && (
+                <div className="px-4 py-6 text-center text-xs text-gray-600 border border-surface-border rounded bg-surface-card">
+                  No critical items — clean handover
+                </div>
+              )}
+              {shiftItems.map(item => (
                 <div
                   key={item.id}
                   className={cn(
