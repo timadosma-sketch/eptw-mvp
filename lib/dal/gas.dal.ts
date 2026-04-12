@@ -135,7 +135,7 @@ export async function acknowledgeAlert(alertId: string, acknowledgedById: string
     where: { id: alertId },
     data: {
       acknowledged: true,
-      acknowledgedById,
+      acknowledgedBy: acknowledgedById,
       acknowledgedAt: new Date(),
     },
   });
