@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getApprovals, getPendingApprovals, getApprovalsByPermit } from '@/lib/dal/approvals.dal';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);

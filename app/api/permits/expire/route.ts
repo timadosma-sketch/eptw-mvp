@@ -10,6 +10,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { logAction } from '@/lib/dal/audit.dal';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   // Simple secret-header guard — set CRON_SECRET in Vercel env
   const secret = process.env.CRON_SECRET;

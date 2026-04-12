@@ -3,6 +3,8 @@ import { auth } from '@/auth';
 import { getPermitById, updatePermitStatus } from '@/lib/dal/permits.dal';
 import { sendPermitStatusEmail } from '@/lib/email';
 import { logAction } from '@/lib/dal/audit.dal';
+
+export const dynamic = 'force-dynamic';
 import { db } from '@/lib/db';
 import type { PermitStatus, UserRole } from '@/lib/types';
 

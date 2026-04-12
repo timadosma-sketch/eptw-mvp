@@ -7,6 +7,8 @@ import { auth } from '@/auth';
 import { acknowledgeAlert } from '@/lib/dal/gas.dal';
 import { logAction } from '@/lib/dal/audit.dal';
 
+export const dynamic = 'force-dynamic';
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } },

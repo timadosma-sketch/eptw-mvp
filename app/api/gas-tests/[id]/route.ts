@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGasTestsByPermit, getLatestReadingsByPermit } from '@/lib/dal/gas.dal';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } },

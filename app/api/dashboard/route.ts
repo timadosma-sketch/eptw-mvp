@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getDashboardMetrics, getDashboardAlerts, getPermitTrend } from '@/lib/dal/dashboard.dal';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const [metrics, alerts, trend] = await Promise.all([

@@ -4,6 +4,8 @@ import { getPermits } from '@/lib/dal/permits.dal';
 import { logAction } from '@/lib/dal/audit.dal';
 import type { PermitFilters } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);

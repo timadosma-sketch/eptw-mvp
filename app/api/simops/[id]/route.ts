@@ -3,6 +3,8 @@ import { auth } from '@/auth';
 import { resolveConflict } from '@/lib/dal/simops.dal';
 import { logAction } from '@/lib/dal/audit.dal';
 
+export const dynamic = 'force-dynamic';
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } },

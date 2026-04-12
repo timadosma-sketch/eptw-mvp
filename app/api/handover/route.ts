@@ -3,6 +3,8 @@ import { auth } from '@/auth';
 import { db } from '@/lib/db';
 import { logAction } from '@/lib/dal/audit.dal';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(_req: NextRequest) {
   try {
     const rows = await db.shiftHandover.findMany({

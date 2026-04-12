@@ -3,6 +3,8 @@ import { auth } from '@/auth';
 import { getIsolationByPermit, getIsolationById, updateIsolationStatus } from '@/lib/dal/isolation.dal';
 import { logAction } from '@/lib/dal/audit.dal';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } },
