@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import {
   MapPin, Wind, AlertTriangle, CheckCircle2, XCircle, Paperclip, Send, Download, PlayCircle, Ban, Pencil, Save, Clock,
 } from 'lucide-react';
-import { Drawer } from '@/components/shared/Modal';
+import { Drawer, Modal } from '@/components/shared/Modal';
 import { PermitStatusBadge, RiskBadge, GasStatusBadge } from '@/components/shared/StatusBadge';
 import { Button } from '@/components/shared/Button';
 import { useAppStore } from '@/lib/store/useAppStore';
@@ -64,6 +64,8 @@ export function PermitDetailDrawer() {
     validFrom: string; validTo: string; workerCount: number;
     simopsZone: string; notes: string;
   }>>({});
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [cancelReason,    setCancelReason]    = useState('');
 
   useEffect(() => {
     if (!selectedPermitId || !permitDetailOpen) return;
@@ -163,11 +165,13 @@ export function PermitDetailDrawer() {
       setActing(false);
     }
   };
-  const handleCancel  = () => {
-    const reason = window.prompt('Reason for cancellation (required):');
-    if (!reason?.trim()) return;
-    changeStatus('CANCELLED', `Permit ${permit.permitNumber} cancelled.`);
+  const handleCancelConfirm = async () => {
+    if (!cancelReason.trim() || !permit) return;
+    setCancelModalOpen(false);
+    await changeStatus('CANCELLED', `Permit ${permit.permitNumber} cancelled.`);
+    setCancelReason('');
   };
+  const handleCancel = () => { setCancelReason(''); setCancelModalOpen(true); };
 
   const startEditing = () => {
     setEditFields({
@@ -665,6 +669,40 @@ export function PermitDetailDrawer() {
         )}
 
       </div>
+
+      {/* Cancel reason modal */}
+      <Modal
+        open={cancelModalOpen}
+        onClose={() => setCancelModalOpen(false)}
+        title="Cancel Permit"
+        subtitle="This action cannot be undone. Please provide a reason."
+        size="sm"
+        footer={
+          <>
+            <Button variant="ghost" size="sm" onClick={() => setCancelModalOpen(false)}>Back</Button>
+            <Button
+              variant="danger"
+              size="sm"
+              icon={Ban}
+              disabled={!cancelReason.trim()}
+              onClick={handleCancelConfirm}
+            >
+              Confirm Cancellation
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <label className="block text-xs text-gray-500 mb-1">Reason for cancellation *</label>
+          <textarea
+            value={cancelReason}
+            onChange={e => setCancelReason(e.target.value)}
+            placeholder="e.g. Work scope changed, permit no longer required…"
+            rows={3}
+            className="w-full text-xs bg-surface-panel border border-surface-border rounded px-3 py-2 text-gray-200 placeholder-gray-600 focus:outline-none focus:border-brand/60 resize-none"
+          />
+        </div>
+      </Modal>
     </Drawer>
   );
 }

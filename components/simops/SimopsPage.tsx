@@ -5,6 +5,7 @@ import { GitMerge, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
 import { PageShell, SectionHeader } from '@/components/shared/PageShell';
 import { KPICard } from '@/components/shared/KPICard';
 import { Button } from '@/components/shared/Button';
+import { Modal } from '@/components/shared/Modal';
 import { useAppStore } from '@/lib/store/useAppStore';
 import { rbac } from '@/lib/rbac';
 import { useT } from '@/lib/i18n/useT';
@@ -31,6 +32,79 @@ const QUICK_MATRIX: Partial<Record<PermitType, Partial<Record<PermitType, SIMOPS
   RADIOGRAPHY:    { HOT_WORK: 'PROHIBITED',  COLD_WORK: 'PROHIBITED',  CONFINED_SPACE: 'PROHIBITED', ELECTRICAL: 'PROHIBITED',  LINE_BREAKING: 'PROHIBITED',  LIFTING: 'PROHIBITED',  RADIOGRAPHY: 'PROHIBITED'  },
 };
 
+// ─── Resolve Conflict Modal ────────────────────────────────────────────────
+
+interface ResolveModalProps {
+  open:        boolean;
+  conflictId:  string;
+  onClose:     () => void;
+  onResolved:  () => void;
+}
+
+function ResolveConflictModal({ open, conflictId, onClose, onResolved }: ResolveModalProps) {
+  const showToast = useAppStore(s => s.showToast);
+  const [resolution, setResolution] = useState('');
+  const [loading,    setLoading]    = useState(false);
+
+  const handleSubmit = async () => {
+    if (!resolution.trim()) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/simops/${conflictId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resolution: resolution.trim() }),
+      });
+      if (res.ok) {
+        showToast('SIMOPS conflict resolved.', 'success');
+        setResolution('');
+        onResolved();
+        onClose();
+      } else {
+        showToast('Failed to resolve conflict.', 'error');
+      }
+    } catch {
+      showToast('Network error.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClose = () => { setResolution(''); onClose(); };
+
+  return (
+    <Modal
+      open={open}
+      onClose={handleClose}
+      title="Resolve SIMOPS Conflict"
+      subtitle="Document the corrective action taken to resolve this conflict"
+      size="sm"
+      footer={
+        <>
+          <Button variant="ghost" size="sm" onClick={handleClose}>Cancel</Button>
+          <Button variant="success" size="sm" icon={CheckCircle2} loading={loading} onClick={handleSubmit} disabled={!resolution.trim()}>
+            Mark Resolved
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        <label className="block text-xs text-gray-500 mb-1">Resolution / Action Taken *</label>
+        <textarea
+          value={resolution}
+          onChange={e => setResolution(e.target.value)}
+          placeholder="Describe what action was taken to resolve this conflict, e.g. 'Suspended HOT_WORK permit PTW-2024-0042 until LINE_BREAKING work is complete in Zone B2. Both supervisors briefed.'"
+          rows={4}
+          className="w-full text-xs bg-surface-panel border border-surface-border rounded px-3 py-2 text-gray-200 placeholder-gray-600 focus:outline-none focus:border-brand/60 resize-none"
+        />
+        <p className="text-2xs text-gray-600">This resolution will be recorded in the immutable audit log.</p>
+      </div>
+    </Modal>
+  );
+}
+
+// ─── Main SimopsPage ────────────────────────────────────────────────────────
+
 export function SimopsPage() {
   const { t } = useT();
   const showToast       = useAppStore(s => s.showToast);
@@ -38,8 +112,9 @@ export function SimopsPage() {
   const dataVersion     = useAppStore(s => s.dataVersion);
   const bumpDataVersion = useAppStore(s => s.bumpDataVersion);
   const canControl      = rbac.canControlPermit(currentUser?.role);
-  const [conflicts, setConflicts] = useState(MOCK_SIMOPS_CONFLICTS);
-  const [resolving, setResolving] = useState<string | null>(null);
+  const [conflicts,    setConflicts]    = useState(MOCK_SIMOPS_CONFLICTS);
+  const [resolving,    setResolving]    = useState<string | null>(null);
+  const [resolveModalId, setResolveModalId] = useState<string | null>(null);
 
   const loadConflicts = () => {
     fetch('/api/simops')
@@ -54,28 +129,10 @@ export function SimopsPage() {
     return () => clearInterval(interval);
   }, [dataVersion]);
 
-  const handleResolve = async (id: string) => {
-    const resolution = window.prompt('Enter resolution / action taken:');
-    if (!resolution?.trim()) return;
+  // resolving state kept for button spinner while modal is open
+  const handleResolveClick = (id: string) => {
     setResolving(id);
-    try {
-      const res = await fetch(`/api/simops/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resolution }),
-      });
-      if (res.ok) {
-        showToast('SIMOPS conflict resolved.', 'success');
-        loadConflicts();
-        bumpDataVersion();
-      } else {
-        showToast('Failed to resolve conflict.', 'error');
-      }
-    } catch {
-      showToast('Network error.', 'error');
-    } finally {
-      setResolving(null);
-    }
+    setResolveModalId(id);
   };
 
   const activeConflicts   = conflicts.filter(c => c.isActive);
@@ -153,7 +210,7 @@ export function SimopsPage() {
                           size="xs"
                           icon={CheckCircle2}
                           loading={resolving === conflict.id}
-                          onClick={() => handleResolve(conflict.id)}
+                          onClick={() => handleResolveClick(conflict.id)}
                         >
                           Resolve
                         </Button>
@@ -244,6 +301,13 @@ export function SimopsPage() {
         </div>
 
       </div>
+
+      <ResolveConflictModal
+        open={resolveModalId !== null}
+        conflictId={resolveModalId ?? ''}
+        onClose={() => { setResolveModalId(null); setResolving(null); }}
+        onResolved={() => { loadConflicts(); bumpDataVersion(); }}
+      />
     </PageShell>
   );
 }
