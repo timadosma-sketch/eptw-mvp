@@ -1,70 +1,56 @@
-# T3 Solutions — Corporate Website
+# T3 Solutions — Enterprise Corporate Website
 
-A fast, self-contained marketing website for **T3 Solutions** (t3solutions.kz).
-Built as a zero-dependency static site — plain HTML, CSS and vanilla JavaScript —
-so it deploys anywhere in seconds and is trivial to move between hosts.
+A premium, enterprise-focused corporate website for **T3 Solutions**, built as a
+**data-driven static site generator**. Services, industries, insights, navigation, SEO and
+contact details live in editable data files — non-developers change content without touching
+templates, and `npm run build` regenerates the whole site.
 
-## Highlights
+> Positioning: *an enterprise technology and digital transformation partner helping
+> organisations in Qatar and the GCC modernise, integrate, automate and scale.*
 
-- **Brand-accurate design** using T3 Solutions' corporate colors (deep navy `#03141b`,
-  cyan-blue `#0795cb`, gold `#ffb81c`) and the official logo.
-- **Sections:** Hero · About/Stats · Services · IT Manpower Supply · Industries ·
-  Portfolio (filterable) · Technology stack · Support model · Contact.
-- **Portfolio** built from the company's real project history (HSE platforms,
-  AI computer vision, SAP, mobile apps, infrastructure, SOC, and more).
-- **IT manpower supply** section covering every specialist type (developers,
-  DevOps, AI/ML, SAP, cybersecurity, support, and more) plus engagement models.
-- Responsive, accessible, animated on scroll, with a working contact form
-  (mailto-based — no backend required).
+## Quick start
+```bash
+cd t3-website
+npm run build     # generates ./dist  (zero dependencies, Node 18+)
+npm run serve     # build + preview at http://localhost:4700
+```
 
 ## Structure
-
 ```
 t3-website/
-├── index.html         # all page markup
-├── styles.css         # brand design system + layout
-├── script.js          # portfolio data, filtering, animations, nav, form
-├── vercel.json        # static hosting config (clean URLs + cache/security headers)
-└── assets/
-    ├── t3-logo.png         # official logo (transparent)
-    ├── favicon.png
-    └── apple-touch-icon.png
+├── build.mjs                 # generator → ./dist
+├── src/
+│   ├── data/                 # ← EDIT CONTENT HERE
+│   │   ├── site.mjs          # brand, nav, footer, contact, GOVERNANCE FLAGS
+│   │   ├── services.mjs      # capabilities → /services/<slug>/
+│   │   ├── industries.mjs    # sectors → /industries/<slug>/
+│   │   ├── content.mjs       # homepage narrative (outcomes, why, approach, solutions)
+│   │   └── insights.mjs      # knowledge-centre topics & pillar plan
+│   ├── lib/                  # components, layout, SEO/JSON-LD, icons (templates)
+│   └── styles/styles.css     # design system
+├── assets/                   # logo, favicons
+└── dist/                     # generated output (deploy this)
 ```
 
-## Run locally
+## Content governance
+Unverified proof (client logos, partner status, testimonials, case studies, certifications,
+leadership, analytics) is **gated behind flags** in `src/data/site.mjs → flags` and stays off
+until approved. See **`WEBSITE_CONTENT_APPROVAL_CHECKLIST.md`**.
 
-No build step. Just serve the folder:
+## Deploy (Vercel)
+The included `vercel.json` builds the site and serves `dist`:
+- Framework preset: **Other**
+- Build command: `node build.mjs`
+- Output directory: `dist`
 
-```bash
-cd t3-website
-python3 -m http.server 3000
-# open http://localhost:3000
-```
+Or any static host: run `npm run build` and upload `./dist`.
 
-## Deploy to Vercel
+## Documentation
+- `WEBSITE_CONTENT_APPROVAL_CHECKLIST.md` — everything management must verify before launch.
+- `SEO_CONTENT_ROADMAP.md` — keyword themes, content clusters, technical SEO, 3/6-month plan.
+- `WEBSITE_IMPLEMENTATION_REPORT.md` — audit, decisions, IA, SEO, a11y, security, risks.
 
-This folder is a standalone static site. In Vercel:
-
-1. Import the Git repository.
-2. Set **Root Directory** to `t3-website`.
-3. **Framework Preset:** *Other* — leave Build Command empty, **Output Directory** `.`.
-4. Deploy, then add the custom domain `t3solutions.kz` in Project → Settings → Domains.
-
-Or with the CLI:
-
-```bash
-cd t3-website
-vercel --prod
-```
-
-## Moving later
-
-Because it's a static bundle with no dependencies, migrating to any other host
-(S3 + CloudFront, Netlify, Cloudflare Pages, Nginx, etc.) is a matter of copying
-the folder — no runtime, no database, no environment variables.
-
-## Editing content
-
-- **Portfolio projects:** edit the `PROJECTS` array in `script.js`.
-- **Copy / sections:** edit `index.html`.
-- **Colors / spacing:** edit the CSS variables at the top of `styles.css`.
+## Notes
+- Contact form uses a mailto handoff by default; a CRM/endpoint integration point is marked in the
+  generated `app.js`.
+- `/ar/` is an RTL "in preparation" placeholder — full Arabic requires professional translation.

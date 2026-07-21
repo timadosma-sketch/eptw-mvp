@@ -1,0 +1,423 @@
+/* =========================================================================
+   Services (capabilities). Each entry generates an SEO service landing page
+   at /services/<slug>/ and appears on the /services/ index under `category`.
+   Only capabilities T3 Solutions can genuinely deliver are listed here.
+   ========================================================================= */
+
+export const serviceCategories = [
+  { id: "applications", title: "Enterprise Applications" },
+  { id: "integration", title: "Integration & Architecture" },
+  { id: "ai", title: "Artificial Intelligence" },
+  { id: "automation", title: "Automation" },
+  { id: "engineering", title: "Engineering & Data" },
+  { id: "infrastructure", title: "Cloud & Infrastructure" },
+  { id: "managed", title: "Managed Services" },
+  { id: "advisory", title: "Advisory & Transformation" },
+];
+
+export const services = [
+  {
+    slug: "sap-consulting-qatar",
+    category: "applications",
+    icon: "sap",
+    title: "SAP Consulting & Delivery",
+    h1: "SAP Consulting and Delivery for Enterprise Transformation",
+    eyebrow: "Enterprise applications",
+    card: "Design, implementation, localisation and support of SAP as a long-term enterprise asset.",
+    valueProp:
+      "We help organisations plan, implement and evolve SAP as a stable core for finance, procurement, HR and operations — with a clean-core mindset and a focus on measurable business value.",
+    challenges: [
+      "Ageing ERP that no longer reflects how the business operates",
+      "Heavy customisation that raises cost and slows upgrades",
+      "Fragmented finance, procurement and HR processes across entities",
+      "Uncertainty around S/4HANA roadmap, scope and business case",
+    ],
+    capabilities: [
+      { title: "S/4HANA advisory & delivery", desc: "Roadmap, scoping, configuration, localisation, data migration, testing and go-live support." },
+      { title: "Procurement & spend", desc: "SAP Ariba advisory and implementation for sourcing, contracts and procurement operations." },
+      { title: "Human capital", desc: "SAP SuccessFactors advisory and integration with core HR and payroll processes." },
+      { title: "Extension & platform", desc: "SAP Business Technology Platform for clean-core extensions, integration and analytics." },
+      { title: "Application modernisation", desc: "Rationalising custom code, moving logic to the platform and reducing technical debt." },
+      { title: "ERP support & optimisation", desc: "Post-go-live stabilisation, enhancement and continuous improvement." },
+    ],
+    outcomes: [
+      "A stable, upgrade-ready SAP core",
+      "Standardised finance, procurement and HR processes",
+      "Lower total cost of ownership through clean-core practices",
+      "Faster, more confident business decisions on trusted data",
+    ],
+    technologies: ["SAP S/4HANA", "SAP Ariba", "SAP SuccessFactors", "SAP BTP", "SAP Integration Suite"],
+    industries: ["government", "energy-utilities", "oil-gas", "banking-financial-services", "manufacturing"],
+    faqs: [
+      { q: "Is T3 Solutions an official SAP partner?", a: "Our SAP partnership status is being confirmed and will be published only once verified. In the meantime we support SAP programmes as an experienced delivery and advisory team." },
+      { q: "Do you support both new implementations and existing SAP estates?", a: "Yes. We advise on greenfield and brownfield S/4HANA journeys, and we also stabilise, enhance and support existing SAP landscapes through managed services." },
+      { q: "How do you keep the core clean?", a: "We favour side-by-side extensions on SAP BTP, standard configuration over modification, and disciplined change governance to keep upgrades straightforward." },
+    ],
+    related: ["enterprise-integration-qatar", "managed-services-qatar", "technology-advisory-qatar"],
+    seoTitle: "SAP Consulting Qatar | S/4HANA, Ariba, SuccessFactors & BTP",
+    seoDescription:
+      "SAP consulting and delivery in Qatar — S/4HANA, Ariba, SuccessFactors and BTP advisory, implementation, localisation and support for enterprise transformation.",
+  },
+  {
+    slug: "enterprise-integration-qatar",
+    category: "integration",
+    icon: "integration",
+    title: "Enterprise Integration & Architecture",
+    h1: "Connect Applications, Data and Processes Across the Enterprise",
+    eyebrow: "Integration & architecture",
+    card: "Integrate fragmented systems with a governed, API-led architecture built to scale.",
+    valueProp:
+      "We connect SAP and non-SAP applications, data and processes through a governed integration architecture — replacing brittle point-to-point links with reliable, reusable interfaces.",
+    challenges: [
+      "Point-to-point integrations that are fragile and hard to change",
+      "Data inconsistency between core systems and channels",
+      "Limited visibility into interface health and failures",
+      "New platforms that must connect to legacy estates",
+    ],
+    capabilities: [
+      { title: "Enterprise architecture", desc: "Target-state architecture, integration patterns and standards aligned to business capabilities." },
+      { title: "API strategy & management", desc: "API design, lifecycle, security and reuse across the enterprise." },
+      { title: "Integration platform delivery", desc: "Implementation on modern integration and middleware platforms, including SAP Integration Suite." },
+      { title: "Application & data integration", desc: "Synchronous and event-driven integration for applications, master data and analytics." },
+      { title: "Legacy modernisation", desc: "Progressively decoupling and modernising legacy systems without disrupting operations." },
+      { title: "Integration governance", desc: "Standards, monitoring and operating model to keep interfaces reliable over time." },
+    ],
+    outcomes: [
+      "Reliable, reusable interfaces instead of brittle links",
+      "Consistent data across core systems and channels",
+      "Faster onboarding of new applications and partners",
+      "Clear visibility and control of integration health",
+    ],
+    technologies: ["SAP Integration Suite", "REST / OpenAPI", "Event-driven architecture", "Kafka", "API gateways"],
+    industries: ["telecommunications", "banking-financial-services", "government", "energy-utilities", "logistics-transportation"],
+    faqs: [
+      { q: "Do you integrate non-SAP systems?", a: "Yes. Our integration work spans SAP and non-SAP applications, custom systems, cloud services and partner interfaces under a single governed architecture." },
+      { q: "Can you improve an existing integration estate?", a: "We assess current interfaces, address reliability and observability gaps, and introduce standards and governance so the estate becomes maintainable." },
+    ],
+    related: ["sap-consulting-qatar", "technology-advisory-qatar", "business-process-automation-qatar"],
+    seoTitle: "Enterprise Integration Qatar | API Strategy & Architecture",
+    seoDescription:
+      "Enterprise integration and architecture in Qatar — API strategy, SAP and non-SAP integration, event-driven architecture and integration governance built to scale.",
+  },
+  {
+    slug: "enterprise-ai-qatar",
+    category: "ai",
+    icon: "ai",
+    title: "Enterprise AI",
+    h1: "Practical Enterprise AI Built Around Real Business Processes",
+    eyebrow: "Artificial intelligence",
+    card: "AI assistants, agents, document intelligence and computer vision applied to real operations.",
+    valueProp:
+      "We apply artificial intelligence to well-defined business problems — from knowledge assistants and document intelligence to computer-vision safety systems — with governance and human oversight built in.",
+    challenges: [
+      "AI ambition without a clear, prioritised set of use cases",
+      "Knowledge and documents locked in systems and inboxes",
+      "Manual review of high volumes of documents and imagery",
+      "Concerns about accuracy, data protection and responsible use",
+    ],
+    capabilities: [
+      { title: "Enterprise AI strategy", desc: "Use-case discovery, prioritisation, readiness assessment and a pragmatic adoption roadmap." },
+      { title: "AI assistants & agents", desc: "Task-focused assistants and agents grounded in enterprise data, with human-in-the-loop controls." },
+      { title: "Retrieval-augmented generation", desc: "Enterprise search and knowledge platforms that answer from trusted, permissioned content." },
+      { title: "Document intelligence", desc: "Extracting, classifying and validating information from documents and forms." },
+      { title: "Computer vision", desc: "Vision analytics for safety, compliance and inspection in industrial environments." },
+      { title: "Responsible AI governance", desc: "Guardrails, evaluation, monitoring and oversight aligned to data-protection expectations." },
+    ],
+    outcomes: [
+      "Faster access to trusted enterprise knowledge",
+      "Reduced manual effort in document-heavy processes",
+      "Earlier detection of safety and compliance issues",
+      "AI adopted with governance, not hype",
+    ],
+    technologies: ["Retrieval-augmented generation", "Computer vision", "Machine learning", "Document AI", "Knowledge platforms"],
+    industries: ["oil-gas", "energy-utilities", "government", "telecommunications", "healthcare"],
+    faqs: [
+      { q: "Where should an enterprise start with AI?", a: "We recommend starting from a small set of high-value, well-scoped use cases with clear data, measurable outcomes and appropriate human oversight — then scaling what works." },
+      { q: "How do you handle data protection and accuracy?", a: "We ground AI in permissioned enterprise data, apply evaluation and monitoring, and keep humans in the loop for decisions that carry risk." },
+      { q: "Do you advise on SAP Joule?", a: "Where relevant and verified for a client's landscape, we can advise on embedded SAP AI capabilities such as Joule as part of a broader enterprise AI roadmap." },
+    ],
+    related: ["business-process-automation-qatar", "business-intelligence-data-qatar", "technology-advisory-qatar"],
+    seoTitle: "Enterprise AI Consulting Qatar | AI Assistants, RAG & Vision",
+    seoDescription:
+      "Enterprise AI in Qatar — AI strategy, assistants and agents, retrieval-augmented generation, document intelligence and computer vision, delivered with responsible governance.",
+  },
+  {
+    slug: "business-process-automation-qatar",
+    category: "automation",
+    icon: "automation",
+    title: "Process Automation & RPA",
+    h1: "Automate High-Volume Processes With Governance and Control",
+    eyebrow: "Automation",
+    card: "RPA, workflow automation and intelligent document processing that reduce manual effort.",
+    valueProp:
+      "We automate repetitive, high-volume processes across finance, procurement, HR and operations — combining workflow, robotic process automation and document intelligence under clear governance.",
+    challenges: [
+      "Manual, repetitive work that is slow and error-prone",
+      "Approvals and handoffs spread across email and spreadsheets",
+      "High volumes of documents that require manual processing",
+      "Automation initiatives that grow without control or standards",
+    ],
+    capabilities: [
+      { title: "Robotic process automation", desc: "Automating rule-based tasks across systems that lack integration." },
+      { title: "Workflow automation", desc: "Digitising approvals, requests and case handling with audit trails." },
+      { title: "Intelligent document processing", desc: "Capturing and validating data from invoices, forms and correspondence." },
+      { title: "Process mining & optimisation", desc: "Understanding how processes actually run before automating them." },
+      { title: "Integration-led automation", desc: "Preferring stable integration over fragile UI automation where possible." },
+      { title: "Automation governance", desc: "Standards, monitoring and an operating model to scale automation safely." },
+    ],
+    outcomes: [
+      "Reduced manual effort and processing time",
+      "Fewer errors and stronger auditability",
+      "Faster approvals and case resolution",
+      "A governed, scalable automation portfolio",
+    ],
+    technologies: ["RPA", "Workflow engines", "Intelligent document processing", "Process mining"],
+    industries: ["banking-financial-services", "government", "energy-utilities", "healthcare", "logistics-transportation"],
+    faqs: [
+      { q: "RPA or integration — how do you choose?", a: "Where a robust API exists, we prefer integration for reliability. RPA is well suited to systems without integration options or where change must be avoided." },
+      { q: "How do you keep automations from becoming unmanageable?", a: "We introduce standards, monitoring, ownership and a lightweight operating model so the automation portfolio stays reliable as it grows." },
+    ],
+    related: ["enterprise-integration-qatar", "enterprise-ai-qatar", "managed-services-qatar"],
+    seoTitle: "Business Process Automation Qatar | RPA & Workflow",
+    seoDescription:
+      "Business process automation in Qatar — RPA, workflow automation, intelligent document processing and process mining, delivered with governance to reduce manual effort.",
+  },
+  {
+    slug: "custom-application-development-qatar",
+    category: "engineering",
+    icon: "code",
+    title: "Custom Application Development",
+    h1: "Enterprise-Grade Custom Applications and Digital Platforms",
+    eyebrow: "Engineering & data",
+    card: "Web, mobile and platform engineering with clean architecture and long-term maintainability.",
+    valueProp:
+      "We design and build custom web, mobile and platform applications where standard products do not fit — engineered for security, scale and long-term maintainability.",
+    challenges: [
+      "Critical processes running on spreadsheets or unsupported tools",
+      "Off-the-shelf products that cannot meet specific requirements",
+      "Field and frontline teams without fit-for-purpose digital tools",
+      "Applications that are hard to support, scale or extend",
+    ],
+    capabilities: [
+      { title: "Product & solution design", desc: "Discovery, UX and solution architecture aligned to business outcomes." },
+      { title: "Web & mobile engineering", desc: "Responsive web and mobile applications, including offline-capable field tools." },
+      { title: "Platform engineering", desc: "APIs, services and data models designed for reuse and integration." },
+      { title: "Modernisation", desc: "Re-platforming and re-engineering legacy applications to reduce risk and cost." },
+      { title: "Quality engineering", desc: "Automated testing, security practices and performance engineering." },
+    ],
+    outcomes: [
+      "Digital tools that fit how teams actually work",
+      "Secure, scalable and maintainable applications",
+      "Reduced reliance on manual and offline workarounds",
+      "A foundation that integrates with the wider estate",
+    ],
+    technologies: ["Web & mobile", "APIs & microservices", "Cloud-native", "Offline-first field apps"],
+    industries: ["oil-gas", "energy-utilities", "healthcare", "logistics-transportation", "government"],
+    faqs: [
+      { q: "When is custom development the right choice?", a: "When standard products cannot meet a genuine requirement, or when a capability is a source of differentiation. Otherwise we favour configuring existing platforms." },
+    ],
+    related: ["enterprise-integration-qatar", "iot-industrial-systems-qatar", "managed-services-qatar"],
+    seoTitle: "Custom Application Development Qatar | Web, Mobile & Platforms",
+    seoDescription:
+      "Custom application development in Qatar — enterprise web, mobile and platform engineering with clean architecture, security and long-term maintainability.",
+  },
+  {
+    slug: "business-intelligence-data-qatar",
+    category: "engineering",
+    icon: "data",
+    title: "Business Intelligence & Data",
+    h1: "Turn Enterprise Data Into Decisions",
+    eyebrow: "Engineering & data",
+    card: "Data platforms, analytics and predictive models that improve operational visibility.",
+    valueProp:
+      "We help organisations bring data together, build trusted analytics and apply predictive models — so leaders can see performance clearly and act with confidence.",
+    challenges: [
+      "Reporting spread across disconnected spreadsheets and systems",
+      "Limited trust in numbers and inconsistent definitions",
+      "No single view of operational or financial performance",
+      "Data that is collected but rarely used for decisions",
+    ],
+    capabilities: [
+      { title: "Data strategy & governance", desc: "Data architecture, quality and ownership aligned to business priorities." },
+      { title: "Data platforms & pipelines", desc: "Consolidating data into governed, analytics-ready foundations." },
+      { title: "Dashboards & reporting", desc: "Decision-focused dashboards and self-service analytics." },
+      { title: "Predictive analytics", desc: "Machine-learning models for forecasting, risk and early warning." },
+      { title: "Master data integration", desc: "Consistent master data across core systems and analytics." },
+    ],
+    outcomes: [
+      "A single, trusted view of performance",
+      "Faster, evidence-based decisions",
+      "Early warning of operational and financial risk",
+      "Data that is governed and reusable",
+    ],
+    technologies: ["Data platforms", "BI & dashboards", "Machine learning", "Big data", "Master data"],
+    industries: ["energy-utilities", "banking-financial-services", "government", "oil-gas", "mining-natural-resources"],
+    faqs: [
+      { q: "Do we need a large platform to start?", a: "No. We start from priority decisions and a focused data foundation, then scale the platform as value is proven." },
+    ],
+    related: ["enterprise-ai-qatar", "enterprise-integration-qatar", "sap-consulting-qatar"],
+    seoTitle: "Business Intelligence & Data Analytics Qatar",
+    seoDescription:
+      "Business intelligence and data services in Qatar — data platforms, governed analytics, dashboards and predictive models that improve operational visibility and decisions.",
+  },
+  {
+    slug: "it-infrastructure-cloud-qatar",
+    category: "infrastructure",
+    icon: "cloud",
+    title: "IT Infrastructure & Cloud",
+    h1: "Reliable, Secure Infrastructure and Cloud Foundations",
+    eyebrow: "Cloud & infrastructure",
+    card: "Cloud strategy, migration and infrastructure modernisation built for resilience.",
+    valueProp:
+      "We modernise infrastructure and cloud foundations for resilience, security and performance — with attention to data residency, governance and cost.",
+    challenges: [
+      "Ageing infrastructure that limits performance and resilience",
+      "Uncertainty over cloud strategy, residency and governance",
+      "Migrations that risk downtime and disruption",
+      "Rising and unpredictable cloud cost",
+    ],
+    capabilities: [
+      { title: "Cloud strategy & migration", desc: "Cloud and hybrid strategy, landing zones and low-risk migration." },
+      { title: "Infrastructure modernisation", desc: "Servers, storage, virtualisation and network core modernisation." },
+      { title: "Platform engineering", desc: "Reliable platforms, environments and automation for delivery teams." },
+      { title: "Resilience & recovery", desc: "Backup, disaster recovery and business-continuity design." },
+      { title: "Cloud governance & cost", desc: "Guardrails, security baselines and cost optimisation." },
+    ],
+    outcomes: [
+      "Resilient, secure and performant foundations",
+      "Migrations delivered with minimal disruption",
+      "Clear governance and predictable cost",
+      "Readiness for data-residency requirements",
+    ],
+    technologies: ["Hybrid cloud", "Virtualisation", "Networking", "Backup & DR", "Infrastructure as code"],
+    industries: ["government", "banking-financial-services", "telecommunications", "energy-utilities", "healthcare"],
+    faqs: [
+      { q: "Can you support data-residency requirements?", a: "Yes. We design cloud and hybrid architectures with data-residency, security and governance requirements as first-class considerations for regulated sectors." },
+    ],
+    related: ["enterprise-integration-qatar", "managed-services-qatar", "technology-advisory-qatar"],
+    seoTitle: "Cloud Consulting & IT Infrastructure Qatar",
+    seoDescription:
+      "Cloud consulting and IT infrastructure in Qatar — cloud strategy, migration, infrastructure modernisation, resilience and governance for regulated enterprises.",
+  },
+  {
+    slug: "iot-industrial-systems-qatar",
+    category: "infrastructure",
+    icon: "iot",
+    title: "IoT & Industrial Systems",
+    h1: "Connected Sensing and Digital Twins for Industrial Operations",
+    eyebrow: "Cloud & infrastructure",
+    card: "IoT, real-time monitoring and digital twins for industrial and utility environments.",
+    valueProp:
+      "We connect industrial assets and environments through IoT, real-time monitoring and digital twins — improving visibility, safety and operational decision-making.",
+    challenges: [
+      "Limited real-time visibility of assets and field operations",
+      "Reactive maintenance and unplanned downtime",
+      "Manual safety and inspection processes in the field",
+      "Operational data that is hard to consolidate and use",
+    ],
+    capabilities: [
+      { title: "Industrial IoT", desc: "Sensing, connectivity and edge data collection for assets and environments." },
+      { title: "Real-time monitoring", desc: "Operational dashboards and alerting for assets, safety and performance." },
+      { title: "Digital twins", desc: "Live models for simulation, monitoring and operational optimisation." },
+      { title: "Predictive maintenance", desc: "Analytics and models that anticipate equipment failure." },
+      { title: "Field & safety solutions", desc: "Connected tools for inspection, tracking and workforce safety." },
+    ],
+    outcomes: [
+      "Real-time visibility of assets and operations",
+      "Fewer unplanned failures through prediction",
+      "Improved field safety and compliance",
+      "Operational data ready for analytics and AI",
+    ],
+    technologies: ["Industrial IoT", "Digital twin", "Edge & real-time", "Predictive analytics"],
+    industries: ["oil-gas", "energy-utilities", "mining-natural-resources", "manufacturing", "logistics-transportation"],
+    faqs: [
+      { q: "Do you work with existing operational systems?", a: "Yes. We integrate with existing control and operational systems and cameras where possible, rather than requiring wholesale replacement." },
+    ],
+    related: ["enterprise-ai-qatar", "business-intelligence-data-qatar", "custom-application-development-qatar"],
+    seoTitle: "IoT & Digital Twin Solutions Qatar",
+    seoDescription:
+      "IoT and industrial systems in Qatar — connected sensing, real-time monitoring, digital twins and predictive maintenance for energy, utilities and industrial operations.",
+  },
+  {
+    slug: "managed-services-qatar",
+    category: "managed",
+    icon: "support",
+    title: "Managed Services & Application Support",
+    h1: "Reliable Application Support, Monitoring and Continuous Improvement",
+    eyebrow: "Managed services",
+    card: "SLA-based application and platform support with a structured, accountable operating model.",
+    valueProp:
+      "We keep enterprise applications and platforms running reliably through structured, SLA-based managed services — combining support, monitoring and continuous improvement.",
+    challenges: [
+      "Business-critical applications without dependable support",
+      "Reactive firefighting instead of proactive service management",
+      "Slow issue resolution and limited accountability",
+      "Little continuous improvement after go-live",
+    ],
+    capabilities: [
+      { title: "Application management services", desc: "Multi-level support for enterprise applications, including SAP (AMS)." },
+      { title: "Monitoring & incident management", desc: "Proactive monitoring, incident and problem management to protect operations." },
+      { title: "Service management", desc: "ITSM processes, SLAs and reporting that make service transparent." },
+      { title: "Continuous improvement", desc: "Enhancements, optimisation and technical-debt reduction over time." },
+      { title: "Release & change management", desc: "Controlled change to keep landscapes stable and current." },
+      { title: "Hypercare & transition", desc: "Structured stabilisation after go-live and smooth service transition." },
+    ],
+    outcomes: [
+      "Higher application availability and reliability",
+      "Faster, more accountable issue resolution",
+      "Transparent service performance against SLAs",
+      "Continuous improvement, not just break-fix",
+    ],
+    technologies: ["SAP AMS", "ITSM", "Monitoring & observability", "SLA management"],
+    industries: ["government", "energy-utilities", "banking-financial-services", "telecommunications", "healthcare"],
+    faqs: [
+      { q: "Do you offer 24/7 support?", a: "Support coverage — including extended and around-the-clock models — is agreed per engagement based on business criticality. Specific SLA levels are defined in the service agreement." },
+      { q: "Can you support applications you did not build?", a: "Yes. We take on support for existing SAP and enterprise applications through a structured transition and knowledge-transfer process." },
+    ],
+    related: ["sap-consulting-qatar", "enterprise-integration-qatar", "it-infrastructure-cloud-qatar"],
+    seoTitle: "Managed IT & SAP AMS Services Qatar",
+    seoDescription:
+      "Managed services in Qatar — application management, SAP AMS, monitoring, incident management and continuous improvement under transparent, SLA-based governance.",
+  },
+  {
+    slug: "technology-advisory-qatar",
+    category: "advisory",
+    icon: "advisory",
+    title: "Technology Advisory & Transformation",
+    h1: "Independent Advisory for Confident Transformation Decisions",
+    eyebrow: "Advisory & transformation",
+    card: "Vendor-neutral strategy, architecture and programme governance for major change.",
+    valueProp:
+      "We provide vendor-neutral advisory that connects business goals to technology decisions — from strategy and architecture to programme governance and delivery assurance.",
+    challenges: [
+      "Transformation ambition without a clear, costed roadmap",
+      "Difficult platform, vendor and architecture decisions",
+      "Large programmes exposed to delivery and governance risk",
+      "Business cases that are hard to substantiate",
+    ],
+    capabilities: [
+      { title: "Digital transformation strategy", desc: "Strategy, operating-model and technology roadmaps tied to outcomes." },
+      { title: "Enterprise architecture assessment", desc: "Current-state assessment and target-state architecture." },
+      { title: "Vendor & solution evaluation", desc: "Independent evaluation, selection support and due diligence." },
+      { title: "Programme governance & PMO", desc: "Governance, assurance and transformation PMO for major programmes." },
+      { title: "Business case development", desc: "Costed, evidence-based business cases and prioritisation." },
+    ],
+    outcomes: [
+      "A clear, prioritised transformation roadmap",
+      "Better-informed platform and vendor decisions",
+      "Reduced delivery and governance risk",
+      "Business cases leadership can stand behind",
+    ],
+    technologies: ["Enterprise architecture", "Operating model design", "Programme governance"],
+    industries: ["government", "energy-utilities", "telecommunications", "banking-financial-services", "oil-gas"],
+    faqs: [
+      { q: "Is your advisory genuinely independent?", a: "Our advisory is vendor-neutral: recommendations are based on client outcomes, not product sales. Where we also deliver, governance keeps advice and implementation appropriately separated." },
+    ],
+    related: ["enterprise-integration-qatar", "sap-consulting-qatar", "managed-services-qatar"],
+    seoTitle: "Technology Advisory & Digital Transformation Qatar",
+    seoDescription:
+      "Technology advisory in Qatar — vendor-neutral digital transformation strategy, enterprise architecture, programme governance and business-case development.",
+  },
+];
+
+export const serviceBySlug = Object.fromEntries(services.map((s) => [s.slug, s]));
