@@ -46,6 +46,8 @@ Strong visual identity and brand colours, but structured as a startup-style "sof
 /services/             Capabilities index (grouped)
 /services/<10 pages>   SAP, Integration, AI, Automation, Custom Apps, BI/Data,
                        Infrastructure/Cloud, IoT, Managed Services, Advisory
+/services/<8 pages>    Specialist SAP & platform: S/4HANA, Ariba, SuccessFactors, BTP,
+                       Integration Suite, AMS, Enterprise Architecture, RPA
 /industries/           Industries index
 /industries/<9 pages>  Government, Energy & Utilities, Oil & Gas, Telecom, Banking,
                        Healthcare, Manufacturing, Mining, Logistics
@@ -60,7 +62,9 @@ Strong visual identity and brand colours, but structured as a startup-style "sof
 /404.html              Custom 404 (noindex)
 sitemap.xml · robots.txt · site.webmanifest · app.js · styles.css
 ```
-**33 pages generated** (10 services + 9 industries + 14 core/utility).
+**41 pages generated** (10 core services + 8 specialist SAP/platform services + 9 industries +
+14 core/utility). Specialist pages appear in a dedicated section on `/services/` and are linked
+from their parent practice pages, but are kept out of the primary nav to preserve a clean IA.
 
 ## 5. SEO implementation
 - Unique `<title>` + meta description per page; canonical; OG + Twitter cards.
@@ -106,7 +110,6 @@ sitemap.xml · robots.txt · site.webmanifest · app.js · styles.css
 - **Domain**: confirm `t3solutions.kz` vs a `.qa` domain and update `site.domain` for canonical/SEO.
 
 ## 10. Recommended future enhancements
-- Split priority SAP sub-service pages (S/4HANA, Ariba, SuccessFactors, BTP, Integration Suite, AMS).
 - Publish approved case studies and client logos (architecture already built and gated).
 - Editorial programme for the five insight clusters (see `SEO_CONTENT_ROADMAP.md`).
 - Full Arabic site with professional translation.

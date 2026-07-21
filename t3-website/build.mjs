@@ -44,8 +44,18 @@ async function writeRoute(r) {
 }
 
 async function copyDir(src, dest) {
+  let entries;
+  try {
+    entries = await fs.readdir(src, { withFileTypes: true });
+  } catch (e) {
+    if (e.code === "ENOENT") {
+      console.warn(`  ! assets dir not found (${src}); skipping asset copy`);
+      return;
+    }
+    throw e;
+  }
   await fs.mkdir(dest, { recursive: true });
-  for (const entry of await fs.readdir(src, { withFileTypes: true })) {
+  for (const entry of entries) {
     const s = path.join(src, entry.name), d = path.join(dest, entry.name);
     if (entry.isDirectory()) await copyDir(s, d);
     else await fs.copyFile(s, d);

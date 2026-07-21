@@ -1,5 +1,5 @@
 import { site } from "../data/site.mjs";
-import { services, serviceCategories, serviceBySlug } from "../data/services.mjs";
+import { services, serviceCategories, serviceBySlug, coreServices, childrenOf } from "../data/services.mjs";
 import { industries, industryBySlug } from "../data/industries.mjs";
 import { businessOutcomes, whyReasons, deliverySteps, solutions, governanceItems, regions } from "../data/content.mjs";
 import { insightCategories, insightPillars } from "../data/insights.mjs";
@@ -17,7 +17,7 @@ const chips = (arr) => `<div class="tags">${arr.map((t) => `<span class="tag">${
 
 /* ============================ HOME ============================ */
 export function home() {
-  const capCards = services.map(capabilityCard).join("");
+  const capCards = coreServices.map(capabilityCard).join("");
   const indCards = industries.slice(0, 6).map(industryCard).join("");
   const outcomes = businessOutcomes.map(outcomeItem).join("");
   const why = whyReasons.map((r) =>
@@ -122,10 +122,18 @@ ${cta({ title: "Ready to modernise your enterprise technology landscape?", text:
 /* ====================== SERVICES INDEX ====================== */
 export function servicesIndex() {
   const groups = serviceCategories.map((c) => {
-    const items = services.filter((s) => s.category === c.id);
+    const items = services.filter((s) => s.category === c.id && !s.sub);
     if (!items.length) return "";
     return `<div style="margin-bottom:8px"><h3 style="color:var(--gold);font-size:1rem;letter-spacing:.04em;text-transform:uppercase;margin:26px 0 4px">${esc(c.title)}</h3></div><div class="grid g-3">${items.map(capabilityCard).join("")}</div>`;
   }).join("");
+
+  const subs = services.filter((s) => s.sub);
+  const specialist = subs.length ? `
+<section class="section section--alt"><div class="container">
+  ${sectionHead({ eyebrow: "Specialist services", title: "Specialist SAP &amp; platform services", text: "Focused delivery capabilities within our core practices — for organisations with a specific SAP product, platform or transformation need." })}
+  <div class="grid g-3">${subs.map((s) => `<a class="card linkcard reveal" href="/services/${s.slug}/"><div class="card__ic">${icons[s.icon] || icons.layers}</div><h3>${esc(s.title)}</h3><p>${esc(s.card)}</p><span class="card__link">Explore ${icons.arrow}</span></a>`).join("")}</div>
+</div></section>` : "";
+
   const trail = [{ label: "Home", href: "/" }, { label: "What We Do", href: "/services/" }];
   const body = `
 ${breadcrumbs(trail)}
@@ -138,6 +146,7 @@ ${breadcrumbs(trail)}
   </div>
   <div style="margin-top:40px">${groups}</div>
 </div></section>
+${specialist}
 ${cta({ title: "Not sure where to start?", text: "Speak with our team about your priorities and we will help shape a pragmatic, outcome-focused path.", btn: "Discuss Your Transformation" })}`;
   return page({
     title: "Enterprise Technology Services in Qatar | T3 Solutions",
@@ -152,6 +161,8 @@ export function servicePage(s) {
   const trail = [{ label: "Home", href: "/" }, { label: "What We Do", href: "/services/" }, { label: s.title, href: `/services/${s.slug}/` }];
   const relatedInd = (s.industries || []).map((slug) => industryBySlug[slug]).filter(Boolean).slice(0, 5);
   const relatedSvc = (s.related || []).map((slug) => serviceBySlug[slug]).filter(Boolean);
+  const children = childrenOf(s.slug);
+  const parent = s.sub ? serviceBySlug[s.parentSlug] : null;
   const serviceLd = {
     "@context": "https://schema.org", "@type": "Service",
     serviceType: s.title, name: s.h1, description: s.valueProp,
@@ -165,6 +176,7 @@ ${breadcrumbs(trail)}
     <span class="eyebrow">${esc(s.eyebrow)}</span>
     <h1>${esc(s.h1)}</h1>
     <p>${esc(s.valueProp)}</p>
+    ${parent ? `<p class="muted" style="margin-top:6px">Part of our <a href="/services/${parent.slug}/" style="color:var(--blue-2)">${esc(parent.title)}</a> practice.</p>` : ""}
     <div class="hero__actions"><a class="btn btn--primary" href="/contact/?interest=${encodeURIComponent(s.title)}">Discuss this capability ${icons.arrow}</a><a class="btn btn--ghost" href="/services/">All capabilities</a></div>
   </div>
 </div></section>
@@ -182,7 +194,12 @@ ${breadcrumbs(trail)}
   <div style="margin-top:30px"><span class="eyebrow">Relevant technologies</span><div class="mt-s">${chips(s.technologies)}</div></div>
 </div></section>
 
-<section class="section section--alt"><div class="container">
+${children.length ? `<section class="section section--alt"><div class="container">
+  ${sectionHead({ eyebrow: "Specialist services", title: "Specialist services in this practice" })}
+  <div class="grid g-3">${children.map((c) => `<a class="card linkcard reveal" href="/services/${c.slug}/"><div class="card__ic">${icons[c.icon] || icons.layers}</div><h3>${esc(c.title)}</h3><p>${esc(c.card)}</p><span class="card__link">Explore ${icons.arrow}</span></a>`).join("")}</div>
+</div></section>` : ""}
+
+<section class="section${children.length ? "" : " section--alt"}"><div class="container">
   ${sectionHead({ eyebrow: "Delivery approach", title: "How we deliver" })}
   ${stepsC(deliverySteps)}
 </div></section>

@@ -17,9 +17,9 @@ export const logo = (id = "lg") => `
 
 /* ---------- Header + dropdown navigation ---------- */
 function servicesDropdown() {
-  const items = services.slice(0, 10).map((s) =>
+  const items = services.filter((s) => !s.sub).map((s) =>
     `<a href="/services/${s.slug}/"><b>${esc(s.title)}</b><span>${esc(s.card)}</span></a>`).join("");
-  return `<div class="dropdown">${items}</div>`;
+  return `<div class="dropdown">${items}<a class="dropdown__all" href="/services/"><b>All capabilities &amp; specialist SAP services</b><span>SAP S/4HANA, Ariba, SuccessFactors, BTP, RPA &amp; more</span></a></div>`;
 }
 function industriesDropdown() {
   const items = industries.map((i) =>
@@ -38,8 +38,8 @@ export function header(current = "") {
 
   const mobItems = nav.map((n) => {
     if (n.dropdown === "services") {
-      const sub = services.map((s) => `<a href="/services/${s.slug}/">${esc(s.title)}</a>`).join("");
-      return `<details><summary>What We Do ${icons.chevron}</summary>${sub}<a href="/services/">All capabilities</a></details>`;
+      const sub = services.filter((s) => !s.sub).map((s) => `<a href="/services/${s.slug}/">${esc(s.title)}</a>`).join("");
+      return `<details><summary>What We Do ${icons.chevron}</summary>${sub}<a href="/services/">All capabilities &amp; specialist services</a></details>`;
     }
     if (n.dropdown === "industries") {
       const sub = industries.map((i) => `<a href="/industries/${i.slug}/">${esc(i.title)}</a>`).join("");

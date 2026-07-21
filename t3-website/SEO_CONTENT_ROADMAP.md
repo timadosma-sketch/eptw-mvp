@@ -21,12 +21,24 @@ internal links.
 | 3 | IoT & Industrial Systems | `/services/iot-industrial-systems-qatar/` |
 | — | Industry pages | `/industries/<sector>/` (9 built) |
 
-### Additional service URLs to split out (Phase 2, from data)
-The following brief-requested URLs can be created as focused pages by adding entries to
-`src/data/services.mjs` (they are currently covered within parent pages):
-`/services/sap-s4hana-qatar/`, `/services/sap-ariba-qatar/`, `/services/sap-successfactors-qatar/`,
-`/services/sap-btp-qatar/`, `/services/sap-integration-suite-qatar/`, `/services/rpa-qatar/`,
-`/services/enterprise-architecture-qatar/`, `/services/sap-ams-qatar/`.
+### Specialist SAP & platform landing pages (built)
+The following brief-requested focused pages are now generated from `src/data/services.mjs`
+(each with unique H1, structured headings, FAQ, JSON-LD, a link to its parent practice, and a
+reciprocal "Specialist services in this practice" block on the parent page):
+
+| Page | URL |
+|---|---|
+| SAP S/4HANA | `/services/sap-s4hana-qatar/` |
+| SAP Ariba | `/services/sap-ariba-qatar/` |
+| SAP SuccessFactors | `/services/sap-successfactors-qatar/` |
+| SAP BTP | `/services/sap-btp-qatar/` |
+| SAP Integration Suite | `/services/sap-integration-suite-qatar/` |
+| SAP AMS | `/services/sap-ams-qatar/` |
+| Enterprise Architecture | `/services/enterprise-architecture-qatar/` |
+| RPA | `/services/rpa-qatar/` |
+
+These are surfaced under a dedicated "Specialist SAP & platform services" section on
+`/services/` and kept out of the primary navigation dropdown to keep the top-level IA clean.
 
 ## Target keyword themes (map, do not stuff)
 - SAP consulting Qatar · SAP S/4HANA consulting Qatar · SAP implementation partner Qatar
