@@ -32,6 +32,7 @@ add("/careers/", P.careersPage());
 add("/insights/", P.insightsPage());
 P.legalPages().forEach((l) => add(l.path, l.html));
 add("/ar/", P.arabicHome());
+add("/ru/", P.russianHome());
 add("/404.html", P.notFound());
 
 /* ---- write helpers ---- */

@@ -549,18 +549,84 @@ export function notFound() {
   }, body);
 }
 
-/* ====================== ARABIC PLACEHOLDER ====================== */
+/* ====================== ARABIC LANDING ====================== */
 export function arabicHome() {
+  const svc = [
+    ["sap", "استشارات وتنفيذ SAP", "تنفيذ وتطوير ودعم حلول SAP: ‏S/4HANA و‏Ariba و‏SuccessFactors و‏BTP."],
+    ["integration", "تكامل الأنظمة المؤسسية", "ربط أنظمة SAP وغير SAP والأنظمة القديمة عبر واجهات API وبنية تكامل مُحوكمة."],
+    ["ai", "الذكاء الاصطناعي للمؤسسات", "مساعدون أذكياء، ووكلاء ذكاء اصطناعي، ورؤية حاسوبية، ودعم اتخاذ القرار."],
+    ["automation", "أتمتة العمليات (RPA)", "روبوتات البرمجيات، وأتمتة سير العمل، والمعالجة الذكية للمستندات."],
+    ["cloud", "السحابة والبنية التحتية", "استراتيجية السحابة والترحيل وبنية تحتية موثوقة وقابلة للتوسع."],
+    ["support", "الخدمات المُدارة والدعم", "دعم التطبيقات وفق اتفاقيات مستوى الخدمة والتحسين المستمر."],
+  ].map(([ic, t, d]) => `<div class="card reveal"><div class="card__ic">${icons[ic] || icons.check}</div><h3>${t}</h3><p>${d}</p></div>`).join("");
   const body = `
-<section class="section" style="padding-top:160px"><div class="container container--narrow center">
-  <span class="eyebrow" style="justify-content:center">قريبًا</span>
-  <h1 style="margin:16px 0">النسخة العربية قيد الإعداد</h1>
-  <p class="lead" style="margin-inline:auto">نعمل على إطلاق النسخة العربية الكاملة لموقع ITX بترجمة احترافية. في الوقت الحالي، تتوفر النسخة الإنجليزية.</p>
-  <div class="hero__actions" style="justify-content:center;margin-top:28px"><a class="btn btn--primary" href="/">English site ${icons.arrow}</a><a class="btn btn--ghost" href="/contact/">تواصل معنا</a></div>
+<section class="section" style="padding-top:150px"><div class="container">
+  <div class="phero">
+    <span class="eyebrow">التكنولوجيا والتحوّل الرقمي للمؤسسات</span>
+    <h1>شريككم التقني للتحوّل الرقمي في قطر ودول الخليج</h1>
+    <p>تساعد ITX المؤسسات على تحديث الأنظمة الأساسية، وتحقيق التكامل بين البيئات التقنية المعقّدة، وأتمتة العمليات، وتطبيق الذكاء الاصطناعي — من الاستراتيجية إلى التنفيذ والدعم طويل الأمد.</p>
+    <div class="hero__actions">
+      <a class="btn btn--primary" href="/contact/">تواصل معنا ${icons.arrow}</a>
+      <a class="btn btn--ghost" href="/">النسخة الإنجليزية الكاملة</a>
+    </div>
+  </div>
+  <div class="grid g-3" style="margin-top:44px">${svc}</div>
+  <div class="notice" style="margin-top:36px">النسخة العربية الكاملة للموقع قيد الإعداد بترجمة احترافية. تتوفر جميع التفاصيل حاليًا في النسخة الإنجليزية.</div>
+  <div class="panel" style="margin-top:36px;max-width:640px">
+    <h3 style="margin-bottom:14px">تواصل معنا</h3>
+    <p style="margin-bottom:8px">البريد الإلكتروني: <a href="mailto:${site.contact.email}" style="color:var(--blue-2)" dir="ltr">${site.contact.email}</a></p>
+    <p>الهاتف: <a href="${site.contact.phoneHref}" style="color:var(--blue-2)" dir="ltr">${esc(site.contact.phone)}</a></p>
+  </div>
 </div></section>`;
   return page({
-    title: "ITX — النسخة العربية قيد الإعداد",
-    description: "النسخة العربية لموقع ITX قيد الإعداد بترجمة احترافية. النسخة الإنجليزية متاحة الآن.",
+    title: "ITX — شريك التكنولوجيا للمؤسسات في قطر",
+    description: "ITX شريك التكنولوجيا والتحوّل الرقمي للمؤسسات في قطر ودول الخليج: SAP، تكامل الأنظمة، الذكاء الاصطناعي، الأتمتة، السحابة والخدمات المُدارة.",
     path: "/ar/", lang: "ar", dir: "rtl", robots: "noindex,follow",
+  }, body);
+}
+
+/* ====================== RUSSIAN LANDING ====================== */
+export function russianHome() {
+  const svc = [
+    ["sap", "Консалтинг и внедрение SAP", "Внедрение, развитие и поддержка SAP: S/4HANA, Ariba, SuccessFactors, BTP."],
+    ["integration", "Интеграция корпоративных систем", "API, интеграционные платформы и событийная архитектура: SAP, не-SAP и legacy."],
+    ["ai", "Корпоративный ИИ", "Ассистенты, ИИ-агенты, компьютерное зрение и поддержка принятия решений."],
+    ["automation", "Автоматизация процессов (RPA)", "Роботизация, workflow-автоматизация и интеллектуальная обработка документов."],
+    ["layers", "Разработка ПО на заказ", "Корпоративные приложения и платформы, спроектированные под ваши процессы."],
+    ["data", "Аналитика и данные (BI)", "Хранилища данных, отчётность и аналитика для управленческих решений."],
+    ["cloud", "Облако и ИТ-инфраструктура", "Облачная стратегия, миграция и отказоустойчивая инфраструктура."],
+    ["iot", "IoT и промышленные системы", "Промышленный интернет вещей, телеметрия и цифровые двойники."],
+    ["support", "Управляемые сервисы и поддержка", "Поддержка приложений по SLA и непрерывное развитие решений."],
+  ].map(([ic, t, d]) => `<div class="card reveal"><div class="card__ic">${icons[ic] || icons.check}</div><h3>${esc(t)}</h3><p>${esc(d)}</p></div>`).join("");
+  const body = `
+<section class="section" style="padding-top:150px"><div class="container">
+  <div class="phero">
+    <span class="eyebrow">Корпоративные технологии и цифровая трансформация</span>
+    <h1>Технологический партнёр вашего бизнеса</h1>
+    <p>ITX помогает компаниям в Катаре, странах Персидского залива и Центральной Азии модернизировать ключевые системы, интегрировать ИТ-ландшафт, автоматизировать процессы и внедрять искусственный интеллект — от стратегии до внедрения и долгосрочной поддержки.</p>
+    <div class="hero__actions">
+      <a class="btn btn--primary" href="/contact/">Обсудить проект ${icons.arrow}</a>
+      <a class="btn btn--ghost" href="/">Полная версия сайта (EN)</a>
+    </div>
+  </div>
+  <div class="grid g-3" style="margin-top:44px">${svc}</div>
+  <div class="split" style="margin-top:56px">
+    <div class="reveal">
+      <span class="eyebrow">Почему ITX</span>
+      <h2 class="mt-s">Полный цикл — от архитектуры до поддержки</h2>
+      <p class="lead mt-s">Мы работаем как системный интегратор полного цикла: архитектурный подход, независимость от вендоров, сильная команда по SAP, ИИ, данным и интеграции, гибкие модели работы — на площадке заказчика, nearshore и удалённо.</p>
+    </div>
+    <div class="panel reveal">
+      <h3 style="margin-bottom:14px">Контакты</h3>
+      <p style="margin-bottom:8px">Email: <a href="mailto:${site.contact.email}" style="color:var(--blue-2)">${site.contact.email}</a></p>
+      <p style="margin-bottom:8px">Телефон: <a href="${site.contact.phoneHref}" style="color:var(--blue-2)">${esc(site.contact.phone)}</a></p>
+      <p class="muted" style="font-size:.9rem;margin-top:14px">Доха (Катар) · Алматы и Атырау (Казахстан)</p>
+    </div>
+  </div>
+</div></section>`;
+  return page({
+    title: "ITX — Технологический партнёр для бизнеса | Катар и Персидский залив",
+    description: "ITX — партнёр по корпоративным технологиям и цифровой трансформации: SAP, интеграция систем, искусственный интеллект, автоматизация, облако и управляемые сервисы в Катаре, странах Залива и Центральной Азии.",
+    path: "/ru/", lang: "ru",
   }, body);
 }

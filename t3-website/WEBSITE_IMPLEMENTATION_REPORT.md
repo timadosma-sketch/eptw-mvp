@@ -58,11 +58,12 @@ Strong visual identity and brand colours, but structured as a startup-style "sof
 /careers/              Roles + general application
 /contact/              Enterprise qualification form + details
 /legal/{privacy,terms,cookies}/   Templates (noindex, pending legal review)
-/ar/                   Arabic "in preparation" (RTL, hreflang ready)
+/ar/                   Arabic landing page (RTL); full translation in preparation
+/ru/                   Russian landing page
 /404.html              Custom 404 (noindex)
 sitemap.xml · robots.txt · site.webmanifest · app.js · styles.css
 ```
-**41 pages generated** (10 core services + 8 specialist SAP/platform services + 9 industries +
+**42 pages generated** (10 core services + 8 specialist SAP/platform services + 9 industries +
 14 core/utility). Specialist pages appear in a dedicated section on `/services/` and are linked
 from their parent practice pages, but are kept out of the primary nav to preserve a clean IA.
 

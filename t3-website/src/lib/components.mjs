@@ -6,15 +6,15 @@ import { industries } from "../data/industries.mjs";
 export const esc = (s = "") => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 /* ---------- Brand logo — "it" wordmark + gradient "X" mark (ITX identity).
-   Rendered light-on-dark for the site's dark theme; the X keeps the brand
-   blue→green gradient. ---------- */
+   Faithful to the source mark: blue "it", near-square X with thick bars,
+   "\" flat blue below, "/" blue→teal→lime gradient on top. ---------- */
 export const logo = (id = "lg") => `
-<svg viewBox="0 0 122 56" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="itX">
-  <defs><linearGradient id="${id}" x1="46" y1="50" x2="112" y2="8" gradientUnits="userSpaceOnUse">
-    <stop offset="0" stop-color="#0e78c0"/><stop offset=".5" stop-color="#2aa6c0"/><stop offset="1" stop-color="#8fc73e"/></linearGradient></defs>
-  <text x="1" y="43" font-family="Arial,Helvetica,sans-serif" font-size="47" font-weight="700" fill="#f4fafd" letter-spacing="-2">it</text>
-  <path d="M46 11 L59 11 L112 51 L99 51 Z" fill="#0e78c0"/>
-  <path d="M46 51 L59 51 L112 11 L99 11 Z" fill="url(#${id})"/>
+<svg viewBox="0 0 118 56" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="itX">
+  <defs><linearGradient id="${id}" x1="62" y1="51" x2="110" y2="11" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#1585c8"/><stop offset=".5" stop-color="#2fb3b9"/><stop offset="1" stop-color="#aada4e"/></linearGradient></defs>
+  <text x="0" y="43" direction="ltr" font-family="Arial,Helvetica,sans-serif" font-size="47" font-weight="800" fill="#2f9fe0" letter-spacing="-2">it</text>
+  <path d="M62 11 L76 11 L110 51 L96 51 Z" fill="#1b7fc4"/>
+  <path d="M62 51 L76 51 L110 11 L96 11 Z" fill="url(#${id})"/>
 </svg>`;
 
 /* ---------- Header + dropdown navigation ---------- */
@@ -57,6 +57,7 @@ export function header(current = "") {
     <a class="brand" href="/" aria-label="ITX home">${logo("lg-h")}</a>
     <nav class="nav__menu" aria-label="Primary">${items}</nav>
     <div class="nav__cta">
+      <a class="langswitch" href="/ru/" hreflang="ru" lang="ru" aria-label="Русская версия"><span>RU</span></a>
       <a class="langswitch" href="/ar/" hreflang="ar" lang="ar" aria-label="التبديل إلى العربية">${icons.globe}<span>ع</span></a>
       <a class="btn btn--primary" href="/contact/">Discuss Your Transformation</a>
       <button class="nav__toggle" id="navToggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobileNav">${icons.menu}</button>
@@ -65,6 +66,8 @@ export function header(current = "") {
 </header>
 <nav class="mobile" id="mobileNav" aria-label="Mobile">
   ${mobItems}
+  <a href="/ru/" lang="ru">Русская версия</a>
+  <a href="/ar/" lang="ar" dir="rtl">النسخة العربية</a>
   <a class="btn btn--primary btn--block" href="/contact/">Discuss Your Transformation</a>
 </nav>`;
 }

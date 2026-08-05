@@ -50,6 +50,18 @@ export function faqLd(items) {
   };
 }
 
+/* hreflang: language home pages cross-reference each other; interior pages
+   (which exist only in English) advertise en + x-default only. */
+function hreflangs(path) {
+  const isLangHome = path === "/" || path === "/ar/" || path === "/ru/";
+  const en = site.domain + (isLangHome ? "/" : path);
+  let out = `<link rel="alternate" hreflang="en" href="${en}" />\n<link rel="alternate" hreflang="x-default" href="${en}" />`;
+  if (isLangHome) {
+    out += `\n<link rel="alternate" hreflang="ar" href="${site.domain}/ar/" />\n<link rel="alternate" hreflang="ru" href="${site.domain}/ru/" />`;
+  }
+  return out;
+}
+
 export function page({ title, description, path = "/", jsonld = [], lang = "en", dir = "ltr", robots } = {}, body = "") {
   const canonical = site.domain + path;
   const ld = [...baseJsonLd(), ...jsonld].filter(Boolean)
@@ -68,9 +80,7 @@ export function page({ title, description, path = "/", jsonld = [], lang = "en",
 <meta name="description" content="${description}" />
 ${robotsTag}
 <link rel="canonical" href="${canonical}" />
-<link rel="alternate" hreflang="en" href="${site.domain}${path}" />
-<link rel="alternate" hreflang="ar" href="${site.domain}/ar${path === "/" ? "/" : path}" />
-<link rel="alternate" hreflang="x-default" href="${site.domain}${path}" />
+${hreflangs(path)}
 <meta name="theme-color" content="#03141b" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="${site.name}" />
@@ -159,5 +169,60 @@ try{
   if(ck && !stored){ ck.classList.remove('hide'); }
   document.addEventListener('click',function(e){ var b=e.target.closest('[data-cookie]'); if(!b) return;
     localStorage.setItem('itx_cookie', b.getAttribute('data-cookie')); if(ck) ck.classList.add('hide'); track('cookie_'+b.getAttribute('data-cookie')); });
+}catch(e){}
+
+/* ---- motion & delight (all gated for reduced-motion / coarse pointers) ---- */
+var reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+var finePtr=window.matchMedia('(pointer: fine)').matches;
+
+// staggered reveals inside grids
+try{
+  document.querySelectorAll('.grid,.outcomes,.steps,.metrics,.hero__proof').forEach(function(g){
+    Array.prototype.forEach.call(g.children,function(c,i){ c.style.setProperty('--rd',(i%8)*60+'ms'); });
+  });
+}catch(e){}
+
+// count-up numerals (metrics + hero proof) when they scroll into view
+try{
+  if(!reduced && 'IntersectionObserver' in window){
+    var seen=new WeakSet();
+    var cio=new IntersectionObserver(function(es){ es.forEach(function(en){
+      if(!en.isIntersecting||seen.has(en.target)) return; seen.add(en.target); cio.unobserve(en.target);
+      var el=en.target, m=el.textContent.trim().match(/^(\\d[\\d.,]*)(.*)$/); if(!m) return;
+      var target=parseInt(m[1].replace(/[.,]/g,''),10), suf=m[2]||'';
+      if(!isFinite(target)||target<=0) return;
+      var t0=null;
+      function tick(t){ if(!t0) t0=t; var p=Math.min(1,(t-t0)/1100); var e=1-Math.pow(1-p,3);
+        el.textContent=Math.round(target*e)+suf; if(p<1) requestAnimationFrame(tick); }
+      requestAnimationFrame(tick);
+    }); },{threshold:0.5});
+    document.querySelectorAll('.metric b,.hero__proof b').forEach(function(el){
+      if(/^\\d/.test(el.textContent.trim())) cio.observe(el);
+    });
+  }
+}catch(e){}
+
+// pointer spotlight on cards
+try{
+  if(finePtr && !reduced){
+    document.addEventListener('pointermove',function(e){
+      var t=e.target.closest('.card,.industry');
+      if(!t) return;
+      var r=t.getBoundingClientRect();
+      t.style.setProperty('--mx',(e.clientX-r.left)+'px');
+      t.style.setProperty('--my',(e.clientY-r.top)+'px');
+    },{passive:true});
+  }
+}catch(e){}
+
+// gentle 3D tilt on the hero panel
+try{
+  var hp=document.querySelector('.hero__panel');
+  if(hp && finePtr && !reduced){
+    window.addEventListener('pointermove',function(e){
+      var dx=(e.clientX/window.innerWidth-0.5), dy=(e.clientY/window.innerHeight-0.5);
+      hp.style.transform='perspective(1000px) rotateY('+(dx*2.4)+'deg) rotateX('+(-dy*2.4)+'deg)';
+    },{passive:true});
+  }
 }catch(e){}
 })();`;
