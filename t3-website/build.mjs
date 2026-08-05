@@ -1,5 +1,5 @@
 /* =========================================================================
-   Static site generator for the T3 Solutions website.
+   Static site generator for the ITX website.
    Run: npm run build  →  outputs to ./dist
    ========================================================================= */
 import { promises as fs } from "node:fs";
@@ -83,7 +83,7 @@ Sitemap: ${site.domain}/sitemap.xml
 `;
 
 const webmanifest = JSON.stringify({
-  name: site.name, short_name: "T3", start_url: "/", display: "standalone",
+  name: site.name, short_name: "ITX", start_url: "/", display: "standalone",
   background_color: "#03141b", theme_color: "#03141b",
   icons: [{ src: "/assets/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
 }, null, 2);

@@ -1,7 +1,7 @@
 import { site } from "../data/site.mjs";
 import { header, footer, cookieBanner } from "./components.mjs";
 
-const FAVICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='8' fill='%230a82b7'/%3E%3Crect width='48' height='8' fill='%23ffb81c'/%3E%3Ctext x='24' y='36' font-family='Arial' font-size='26' font-weight='bold' fill='%23fff' text-anchor='middle'%3ET3%3C/text%3E%3C/svg%3E";
+const FAVICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='8' fill='%230a82b7'/%3E%3Crect width='48' height='8' fill='%23ffb81c'/%3E%3Ctext x='24' y='35' font-family='Arial' font-size='19' font-weight='bold' fill='%23fff' text-anchor='middle'%3EITX%3C/text%3E%3C/svg%3E";
 
 /* Organisation + WebSite base JSON-LD — no fabricated ratings, employee
    counts, or social profiles. LinkedIn added only when verified in site data. */
@@ -155,9 +155,9 @@ if(form){
 
 // cookie banner
 try{
-  var ck=document.getElementById('cookie'); var stored=localStorage.getItem('t3_cookie');
+  var ck=document.getElementById('cookie'); var stored=localStorage.getItem('itx_cookie');
   if(ck && !stored){ ck.classList.remove('hide'); }
   document.addEventListener('click',function(e){ var b=e.target.closest('[data-cookie]'); if(!b) return;
-    localStorage.setItem('t3_cookie', b.getAttribute('data-cookie')); if(ck) ck.classList.add('hide'); track('cookie_'+b.getAttribute('data-cookie')); });
+    localStorage.setItem('itx_cookie', b.getAttribute('data-cookie')); if(ck) ck.classList.add('hide'); track('cookie_'+b.getAttribute('data-cookie')); });
 }catch(e){}
 })();`;

@@ -1,6 +1,6 @@
-# T3 Solutions — Enterprise Corporate Website
+# ITX — Enterprise Corporate Website
 
-A premium, enterprise-focused corporate website for **T3 Solutions**, built as a
+A premium, enterprise-focused corporate website for **ITX**, built as a
 **data-driven static site generator**. Services, industries, insights, navigation, SEO and
 contact details live in editable data files — non-developers change content without touching
 templates, and `npm run build` regenerates the whole site.

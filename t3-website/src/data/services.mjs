@@ -1,7 +1,7 @@
 /* =========================================================================
    Services (capabilities). Each entry generates an SEO service landing page
    at /services/<slug>/ and appears on the /services/ index under `category`.
-   Only capabilities T3 Solutions can genuinely deliver are listed here.
+   Only capabilities ITX can genuinely deliver are listed here.
    ========================================================================= */
 
 export const serviceCategories = [
@@ -49,7 +49,7 @@ export const services = [
     technologies: ["SAP S/4HANA", "SAP Ariba", "SAP SuccessFactors", "SAP BTP", "SAP Integration Suite"],
     industries: ["government", "energy-utilities", "oil-gas", "banking-financial-services", "manufacturing"],
     faqs: [
-      { q: "Is T3 Solutions an official SAP partner?", a: "Our SAP partnership status is being confirmed and will be published only once verified. In the meantime we support SAP programmes as an experienced delivery and advisory team." },
+      { q: "Is ITX an official SAP partner?", a: "Our SAP partnership status is being confirmed and will be published only once verified. In the meantime we support SAP programmes as an experienced delivery and advisory team." },
       { q: "Do you support both new implementations and existing SAP estates?", a: "Yes. We advise on greenfield and brownfield S/4HANA journeys, and we also stabilise, enhance and support existing SAP landscapes through managed services." },
       { q: "How do you keep the core clean?", a: "We favour side-by-side extensions on SAP BTP, standard configuration over modification, and disciplined change governance to keep upgrades straightforward." },
     ],

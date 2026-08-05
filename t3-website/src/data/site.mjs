@@ -4,19 +4,19 @@
    ========================================================================= */
 
 export const site = {
-  name: "T3 Solutions",
-  legalName: "T3 Solutions",
-  domain: "https://www.t3solutions.kz",           // update to t3solutions.qa when live
+  name: "ITX",
+  legalName: "ITX",
+  domain: "https://www.t3solutions.kz",           // [VERIFY] update to the confirmed ITX domain when available
   locale: "en",
   tagline: "Enterprise Technology Partner for Qatar",
   description:
-    "T3 Solutions is an enterprise technology and digital transformation partner helping organisations in Qatar and the GCC modernise core systems, integrate complex landscapes, automate processes and deliver measurable digital outcomes across SAP, AI, cloud, integration and managed services.",
+    "ITX is an enterprise technology and digital transformation partner helping organisations in Qatar and the GCC modernise core systems, integrate complex landscapes, automate processes and deliver measurable digital outcomes across SAP, AI, cloud, integration and managed services.",
 
   /* ---- Verified contact details (from company overview). Confirm before launch. ---- */
   contact: {
     phone: "+7 701 745 8899",                     // [VERIFY] confirm Qatar number for GCC audience
     phoneHref: "tel:+77017458899",
-    email: "info@t3solutions.kz",                  // [VERIFY] confirm/introduce @t3solutions.qa
+    email: "info@t3solutions.kz",                  // [VERIFY] confirm the ITX email address to display
     website: "www.t3solutions.kz",
     linkedin: "https://www.linkedin.com/",         // [VERIFY] add official company LinkedIn URL
   },

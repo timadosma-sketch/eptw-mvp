@@ -33,7 +33,7 @@ export function home() {
     <div class="reveal in">
       <span class="eyebrow">Enterprise technology & digital transformation</span>
       <h1>Enterprise Technology <span class="grad">Partner for Qatar</span></h1>
-      <p class="hero__lead">T3 Solutions helps organisations modernise core systems, integrate complex technology landscapes, automate business processes and deliver measurable digital outcomes across Qatar and the GCC.</p>
+      <p class="hero__lead">ITX helps organisations modernise core systems, integrate complex technology landscapes, automate business processes and deliver measurable digital outcomes across Qatar and the GCC.</p>
       <div class="hero__actions">
         <a class="btn btn--primary" href="/contact/" data-analytics="cta_discuss">Discuss Your Transformation ${icons.arrow}</a>
         <a class="btn btn--ghost" href="/services/">Explore Our Capabilities</a>
@@ -75,7 +75,7 @@ export function home() {
 </div></section>
 
 <section class="section section--alt"><div class="container">
-  ${sectionHead({ eyebrow: "Why T3 Solutions", title: "A partner built for enterprise delivery" })}
+  ${sectionHead({ eyebrow: "Why ITX", title: "A partner built for enterprise delivery" })}
   <div class="grid g-3">${why}</div>
 </div></section>
 
@@ -149,8 +149,8 @@ ${breadcrumbs(trail)}
 ${specialist}
 ${cta({ title: "Not sure where to start?", text: "Speak with our team about your priorities and we will help shape a pragmatic, outcome-focused path.", btn: "Discuss Your Transformation" })}`;
   return page({
-    title: "Enterprise Technology Services in Qatar | T3 Solutions",
-    description: "T3 Solutions' enterprise capabilities in Qatar — SAP, enterprise integration, AI, process automation, cloud, data, IoT, managed services and technology advisory.",
+    title: "Enterprise Technology Services in Qatar | ITX",
+    description: "ITX' enterprise capabilities in Qatar — SAP, enterprise integration, AI, process automation, cloud, data, IoT, managed services and technology advisory.",
     path: "/services/",
     jsonld: [breadcrumbLd(trail)],
   }, body);
@@ -221,7 +221,7 @@ ${relatedSvc.length ? `<section class="section"><div class="container">
 
 ${cta({ title: "Discuss your " + s.title.toLowerCase() + " priorities", text: "Speak with a specialist about your landscape, objectives and timeline.", btn: "Schedule a Consultation" })}`;
   return page({
-    title: s.seoTitle + " | T3 Solutions",
+    title: s.seoTitle + " | ITX",
     description: s.seoDescription,
     path: `/services/${s.slug}/`,
     jsonld: [breadcrumbLd(trail), serviceLd, faqLd(s.faqs)],
@@ -243,7 +243,7 @@ ${breadcrumbs(trail)}
 </div></section>
 ${cta({ title: "Let's discuss your sector", text: "Speak with our team about the challenges and opportunities specific to your industry." })}`;
   return page({
-    title: "Industry Technology Solutions in Qatar | T3 Solutions",
+    title: "Industry Technology Solutions in Qatar | ITX",
     description: "Industry-focused technology solutions in Qatar — government, energy, oil & gas, telecom, banking, healthcare, manufacturing, mining and logistics.",
     path: "/industries/",
     jsonld: [breadcrumbLd(trail)],
@@ -285,7 +285,7 @@ ${relatedSvc.length ? `<section class="section section--alt"><div class="contain
 
 ${cta({ title: `Technology solutions for ${i.title.toLowerCase()}`, text: "Speak with our team about the transformation opportunities specific to your organisation." })}`;
   return page({
-    title: i.seoTitle + " | T3 Solutions",
+    title: i.seoTitle + " | ITX",
     description: i.seoDescription,
     path: `/industries/${i.slug}/`,
     jsonld: [breadcrumbLd(trail)],
@@ -305,8 +305,8 @@ ${breadcrumbs(trail)}
 </div></section>
 ${cta({ title: "Have a specific challenge in mind?", text: "Tell us what you are trying to achieve and we will shape a solution around it." })}`;
   return page({
-    title: "Enterprise Solutions | T3 Solutions Qatar",
-    description: "Enterprise solution areas from T3 Solutions — HSE and safety intelligence, asset performance and digital twins, SAP, integration, automation and enterprise AI.",
+    title: "Enterprise Solutions | ITX Qatar",
+    description: "Enterprise solution areas from ITX — HSE and safety intelligence, asset performance and digital twins, SAP, integration, automation and enterprise AI.",
     path: "/solutions/",
     jsonld: [breadcrumbLd(trail)],
   }, body);
@@ -329,7 +329,7 @@ ${breadcrumbs(trail)}
     <div class="reveal">
       <span class="eyebrow">Our positioning</span>
       <h2 class="mt-s">Business understanding meets technical depth</h2>
-      <p class="lead mt-s">T3 Solutions is a full-cycle system integrator and digital transformation partner. We modernise core systems, integrate complex landscapes, automate processes and apply data and AI — with the governance and accountability enterprise programmes require.</p>
+      <p class="lead mt-s">ITX is a full-cycle system integrator and digital transformation partner. We modernise core systems, integrate complex landscapes, automate processes and apply data and AI — with the governance and accountability enterprise programmes require.</p>
       <p class="muted mt-s">Our approach is architecture-led and vendor-neutral: we recommend what serves your outcomes, and we stay to support what we deliver.</p>
     </div>
     <div class="panel reveal">
@@ -353,8 +353,8 @@ ${breadcrumbs(trail)}
 
 ${cta({ title: "Work with a partner built for enterprise delivery", text: "Talk to our team about your transformation priorities — or explore opportunities to join us.", btn: "Contact Us" })}`;
   return page({
-    title: "About T3 Solutions | Enterprise Technology Partner in Qatar",
-    description: "T3 Solutions is an enterprise technology and digital transformation partner in Qatar and the GCC — architecture-led, vendor-neutral, and focused on measurable outcomes.",
+    title: "About ITX | Enterprise Technology Partner in Qatar",
+    description: "ITX is an enterprise technology and digital transformation partner in Qatar and the GCC — architecture-led, vendor-neutral, and focused on measurable outcomes.",
     path: "/about/",
     jsonld: [breadcrumbLd(trail)],
   }, body);
@@ -367,7 +367,7 @@ export function contactPage() {
     `<div>${esc(o.city)}, ${esc(o.country)}${o.address ? ` — ${esc(o.address)}` : ""}</div>`).join("");
   const contactLd = {
     "@context": "https://schema.org", "@type": "ContactPage",
-    name: "Contact T3 Solutions", url: site.domain + "/contact/",
+    name: "Contact ITX", url: site.domain + "/contact/",
   };
   const body = `
 ${breadcrumbs(trail)}
@@ -385,8 +385,8 @@ ${breadcrumbs(trail)}
   </div>
 </div></section>`;
   return page({
-    title: "Contact T3 Solutions | Enterprise Technology in Qatar",
-    description: "Contact T3 Solutions to discuss enterprise transformation, SAP, integration, AI, automation or managed services in Qatar and the GCC.",
+    title: "Contact ITX | Enterprise Technology in Qatar",
+    description: "Contact ITX to discuss enterprise transformation, SAP, integration, AI, automation or managed services in Qatar and the GCC.",
     path: "/contact/",
     jsonld: [breadcrumbLd(trail), contactLd],
   }, body);
@@ -406,7 +406,7 @@ export function partnersPage() {
   const body = `
 ${breadcrumbs(trail)}
 <section class="section"><div class="container">
-  <div class="phero"><span class="eyebrow">Partners</span><h1>Partner with T3 Solutions</h1>
+  <div class="phero"><span class="eyebrow">Partners</span><h1>Partner with ITX</h1>
   <p>We work with technology, delivery and market partners to bring the right capabilities to enterprise programmes across Qatar and the GCC.</p></div>
   <div class="grid g-3" style="margin-top:36px">${reasons.map(([t, d]) => `<div class="card reveal"><h3>${esc(t)}</h3><p>${esc(d)}</p></div>`).join("")}</div>
   ${!site.flags.showPartnerLogos ? `<div class="notice" style="margin-top:32px">Technology and delivery partnerships are listed publicly only once formally verified. Please contact us to discuss collaboration.</div>` : ""}
@@ -416,8 +416,8 @@ ${breadcrumbs(trail)}
   <div style="max-width:760px">${contactForm()}</div>
 </div></section>`;
   return page({
-    title: "Partners | T3 Solutions Qatar",
-    description: "Partner with T3 Solutions — technology, delivery and market collaboration for enterprise transformation programmes across Qatar and the GCC.",
+    title: "Partners | ITX Qatar",
+    description: "Partner with ITX — technology, delivery and market collaboration for enterprise transformation programmes across Qatar and the GCC.",
     path: "/partners/",
     jsonld: [breadcrumbLd(trail)],
   }, body);
@@ -444,8 +444,8 @@ ${breadcrumbs(trail)}
   <div class="mt-m"><a class="btn btn--primary" href="/contact/?interest=Careers">Submit a general application ${icons.arrow}</a></div>
 </div></section>`;
   return page({
-    title: "Careers | T3 Solutions Qatar",
-    description: "Careers at T3 Solutions — consulting, SAP, engineering, AI, automation, managed services and delivery roles across Qatar and the region.",
+    title: "Careers | ITX Qatar",
+    description: "Careers at ITX — consulting, SAP, engineering, AI, automation, managed services and delivery roles across Qatar and the region.",
     path: "/careers/",
     jsonld: [breadcrumbLd(trail)],
   }, body);
@@ -469,8 +469,8 @@ ${breadcrumbs(trail)}
 </div></section>
 ${cta({ title: "Have a question our team can help with?", text: "Speak with a specialist about your transformation priorities.", btn: "Contact Us" })}`;
   return page({
-    title: "Insights & Knowledge Centre | T3 Solutions Qatar",
-    description: "Enterprise technology insights from T3 Solutions — SAP transformation, enterprise AI, integration, automation, cloud and managed services for Qatar and the GCC.",
+    title: "Insights & Knowledge Centre | ITX Qatar",
+    description: "Enterprise technology insights from ITX — SAP transformation, enterprise AI, integration, automation, cloud and managed services for Qatar and the GCC.",
     path: "/insights/",
     jsonld: [breadcrumbLd(trail)],
   }, body);
@@ -493,8 +493,8 @@ ${breadcrumbs(trail)}
   return {
     path: `/legal/${slug}/`,
     html: page({
-      title: `${title} | T3 Solutions`,
-      description: `${title} for the T3 Solutions website.`,
+      title: `${title} | ITX`,
+      description: `${title} for the ITX website.`,
       path: `/legal/${slug}/`, robots: "noindex,follow",
       jsonld: [breadcrumbLd(trail)],
     }, body),
@@ -504,7 +504,7 @@ ${breadcrumbs(trail)}
 export function legalPages() {
   return [
     legal("privacy", "Privacy Policy",
-      "This policy explains how T3 Solutions collects, uses and protects personal information submitted through this website.",
+      "This policy explains how ITX collects, uses and protects personal information submitted through this website.",
       [
         { h: "Information we collect", p: "We collect the information you provide through enquiry forms, such as name, work email, company, job title, country and message details." },
         { h: "How we use information", p: "We use your information to respond to enquiries, provide requested information and manage our business relationship with you." },
@@ -515,16 +515,16 @@ export function legalPages() {
         { h: "Contact", p: "For any privacy request, contact us using the details below." },
       ]),
     legal("terms", "Terms of Use",
-      "These terms govern your use of the T3 Solutions website.",
+      "These terms govern your use of the ITX website.",
       [
-        { h: "Use of this website", p: "This website is provided for general information about T3 Solutions and its services. Content may change without notice." },
-        { h: "Intellectual property", p: "All content on this website is owned by or licensed to T3 Solutions and may not be reproduced without permission." },
+        { h: "Use of this website", p: "This website is provided for general information about ITX and its services. Content may change without notice." },
+        { h: "Intellectual property", p: "All content on this website is owned by or licensed to ITX and may not be reproduced without permission." },
         { h: "No warranty", p: "Information is provided in good faith but without warranty of completeness or fitness for a particular purpose." },
-        { h: "Limitation of liability", p: "To the extent permitted by law, T3 Solutions is not liable for any loss arising from use of this website." },
+        { h: "Limitation of liability", p: "To the extent permitted by law, ITX is not liable for any loss arising from use of this website." },
         { h: "Governing law", p: "These terms are governed by the applicable laws of the relevant jurisdiction, to be confirmed on publication." },
       ]),
     legal("cookies", "Cookie Policy",
-      "This policy explains how cookies are used on the T3 Solutions website.",
+      "This policy explains how cookies are used on the ITX website.",
       [
         { h: "What are cookies", p: "Cookies are small files stored on your device that help websites function and understand how they are used." },
         { h: "Cookies we use", p: "We use essential cookies required for the site to function, and optional analytics cookies only where you have provided consent." },
@@ -543,7 +543,7 @@ export function notFound() {
   <div class="hero__actions" style="justify-content:center;margin-top:28px"><a class="btn btn--primary" href="/">Return home ${icons.arrow}</a><a class="btn btn--ghost" href="/services/">Explore capabilities</a></div>
 </div></section>`;
   return page({
-    title: "Page not found | T3 Solutions",
+    title: "Page not found | ITX",
     description: "The page you are looking for could not be found.",
     path: "/404.html", robots: "noindex,follow",
   }, body);
@@ -555,12 +555,12 @@ export function arabicHome() {
 <section class="section" style="padding-top:160px"><div class="container container--narrow center">
   <span class="eyebrow" style="justify-content:center">قريبًا</span>
   <h1 style="margin:16px 0">النسخة العربية قيد الإعداد</h1>
-  <p class="lead" style="margin-inline:auto">نعمل على إطلاق النسخة العربية الكاملة لموقع T3 Solutions بترجمة احترافية. في الوقت الحالي، تتوفر النسخة الإنجليزية.</p>
+  <p class="lead" style="margin-inline:auto">نعمل على إطلاق النسخة العربية الكاملة لموقع ITX بترجمة احترافية. في الوقت الحالي، تتوفر النسخة الإنجليزية.</p>
   <div class="hero__actions" style="justify-content:center;margin-top:28px"><a class="btn btn--primary" href="/">English site ${icons.arrow}</a><a class="btn btn--ghost" href="/contact/">تواصل معنا</a></div>
 </div></section>`;
   return page({
-    title: "T3 Solutions — النسخة العربية قيد الإعداد",
-    description: "النسخة العربية لموقع T3 Solutions قيد الإعداد بترجمة احترافية. النسخة الإنجليزية متاحة الآن.",
+    title: "ITX — النسخة العربية قيد الإعداد",
+    description: "النسخة العربية لموقع ITX قيد الإعداد بترجمة احترافية. النسخة الإنجليزية متاحة الآن.",
     path: "/ar/", lang: "ar", dir: "rtl", robots: "noindex,follow",
   }, body);
 }

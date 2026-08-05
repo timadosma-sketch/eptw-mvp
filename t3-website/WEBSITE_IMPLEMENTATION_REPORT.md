@@ -1,4 +1,4 @@
-# Website Implementation Report — T3 Solutions
+# Website Implementation Report — ITX
 
 ## 1. Existing-state findings (audit)
 

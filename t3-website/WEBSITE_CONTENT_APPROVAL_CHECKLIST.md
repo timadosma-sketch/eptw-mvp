@@ -1,6 +1,6 @@
 # Website Content Approval Checklist
 
-Everything below must be **verified and approved by T3 Solutions management** before the
+Everything below must be **verified and approved by ITX management** before the
 website is published to a production audience. Nothing in this list has been invented; where
 information was unavailable it has been **omitted or gated behind a flag** (see
 `src/data/site.mjs → flags`) rather than fabricated.

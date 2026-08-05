@@ -5,14 +5,14 @@ import { industries } from "../data/industries.mjs";
 
 export const esc = (s = "") => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-/* ---------- Brand logo (SVG recreation of the T3 mark) ---------- */
+/* ---------- Brand logo (SVG wordmark for the ITX brand) ---------- */
 export const logo = (id = "lg") => `
-<svg viewBox="0 0 250 60" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="T3 Solutions">
+<svg viewBox="0 0 180 60" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ITX">
   <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#39b6e6"/><stop offset="1" stop-color="#0a6fa0"/></linearGradient></defs>
-  <path d="M6 10 L66 10 L60 58 L12 58 Z" fill="url(#${id})"/>
-  <path d="M6 10 L66 10 L64 20 L6 20 Z" fill="#ffb81c"/>
-  <text x="34" y="50" font-family="Arial,Helvetica,sans-serif" font-size="30" font-weight="800" fill="#fff" text-anchor="middle">T3</text>
-  <text x="80" y="48" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="600" fill="#0795cb">Solutions</text>
+  <rect x="4" y="12" width="46" height="46" rx="12" fill="url(#${id})"/>
+  <path d="M4 24 A12 12 0 0 1 16 12 L38 12 A12 12 0 0 1 50 24 Z" fill="#ffb81c"/>
+  <text x="27" y="47" font-family="Arial,Helvetica,sans-serif" font-size="24" font-weight="800" fill="#fff" text-anchor="middle">X</text>
+  <text x="64" y="47" font-family="Arial,Helvetica,sans-serif" font-size="37" font-weight="800" fill="#0795cb" letter-spacing=".5">ITX</text>
 </svg>`;
 
 /* ---------- Header + dropdown navigation ---------- */
@@ -52,7 +52,7 @@ export function header(current = "") {
 <a class="skip" href="#main">Skip to content</a>
 <header class="header" id="header">
   <div class="container nav">
-    <a class="brand" href="/" aria-label="T3 Solutions home">${logo("lg-h")}</a>
+    <a class="brand" href="/" aria-label="ITX home">${logo("lg-h")}</a>
     <nav class="nav__menu" aria-label="Primary">${items}</nav>
     <div class="nav__cta">
       <a class="langswitch" href="/ar/" hreflang="ar" lang="ar" aria-label="التبديل إلى العربية">${icons.globe}<span>ع</span></a>

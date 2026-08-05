@@ -1,4 +1,4 @@
-# SEO & Content Roadmap — T3 Solutions
+# SEO & Content Roadmap — ITX
 
 Target market: **Qatar and the GCC**. Audience: enterprise technology decision-makers (CIO/CTO/CDO,
 IT directors, procurement, government/telecom/energy leaders, SAP programme owners).
