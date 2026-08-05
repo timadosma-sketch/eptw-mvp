@@ -1,7 +1,7 @@
 import { site } from "../data/site.mjs";
 import { header, footer, cookieBanner } from "./components.mjs";
 
-const FAVICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='8' fill='%230a82b7'/%3E%3Crect width='48' height='8' fill='%23ffb81c'/%3E%3Ctext x='24' y='35' font-family='Arial' font-size='19' font-weight='bold' fill='%23fff' text-anchor='middle'%3EITX%3C/text%3E%3C/svg%3E";
+const FAVICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cdefs%3E%3ClinearGradient id='fx' x1='12' y1='36' x2='38' y2='10' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0' stop-color='%230e78c0'/%3E%3Cstop offset='1' stop-color='%238fc73e'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='48' height='48' rx='10' fill='%2303141b'/%3E%3Cpath d='M13 12 19 12 39 36 33 36Z' fill='%232a9fd0'/%3E%3Cpath d='M13 36 19 36 39 12 33 12Z' fill='url(%23fx)'/%3E%3C/svg%3E";
 
 /* Organisation + WebSite base JSON-LD — no fabricated ratings, employee
    counts, or social profiles. LinkedIn added only when verified in site data. */

@@ -6,7 +6,7 @@
 export const site = {
   name: "ITX",
   legalName: "ITX",
-  domain: "https://www.t3solutions.kz",           // [VERIFY] update to the confirmed ITX domain when available
+  domain: "https://itx.qa",                        // primary production domain (owned)
   locale: "en",
   tagline: "Enterprise Technology Partner for Qatar",
   description:
@@ -16,8 +16,8 @@ export const site = {
   contact: {
     phone: "+7 701 745 8899",                     // [VERIFY] confirm Qatar number for GCC audience
     phoneHref: "tel:+77017458899",
-    email: "info@t3solutions.kz",                  // [VERIFY] confirm the ITX email address to display
-    website: "www.t3solutions.kz",
+    email: "info@itx.qa",                          // [SET UP] create this mailbox / forwarding on itx.qa
+    website: "itx.qa",
     linkedin: "https://www.linkedin.com/",         // [VERIFY] add official company LinkedIn URL
   },
 
@@ -51,7 +51,7 @@ export const site = {
 
   socials: [
     { label: "LinkedIn", href: "https://www.linkedin.com/", icon: "linkedin" },
-    { label: "Email", href: "mailto:info@t3solutions.kz", icon: "mail" },
+    { label: "Email", href: "mailto:info@itx.qa", icon: "mail" },
   ],
 };
 

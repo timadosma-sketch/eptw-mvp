@@ -88,7 +88,7 @@ custom 404 (noindex) · `noindex` on legal/utility pages · web manifest.
 - [ ] Add an OG image (`/assets/og-cover.png`, 1200×630) and reference in `<meta og:image>`.
 - [ ] Configure 301 redirects from the previous single-page URLs if any were indexed.
 - [ ] Submit sitemap in Google Search Console + Bing Webmaster once live on the production domain.
-- [ ] Confirm production domain (`t3solutions.kz` vs `.qa`) and update `site.domain`.
+- [x] Production domain confirmed: `itx.qa` (set in `site.domain`). Point it at the Vercel project.
 - [ ] Add `Article`/`BlogPosting` + `Person` JSON-LD when insights/leadership go live.
 - [ ] Add `JobPosting` JSON-LD when real vacancies are published.
 

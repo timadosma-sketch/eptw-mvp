@@ -5,14 +5,16 @@ import { industries } from "../data/industries.mjs";
 
 export const esc = (s = "") => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-/* ---------- Brand logo (SVG wordmark for the ITX brand) ---------- */
+/* ---------- Brand logo — "it" wordmark + gradient "X" mark (ITX identity).
+   Rendered light-on-dark for the site's dark theme; the X keeps the brand
+   blue→green gradient. ---------- */
 export const logo = (id = "lg") => `
-<svg viewBox="0 0 180 60" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ITX">
-  <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#39b6e6"/><stop offset="1" stop-color="#0a6fa0"/></linearGradient></defs>
-  <rect x="4" y="12" width="46" height="46" rx="12" fill="url(#${id})"/>
-  <path d="M4 24 A12 12 0 0 1 16 12 L38 12 A12 12 0 0 1 50 24 Z" fill="#ffb81c"/>
-  <text x="27" y="47" font-family="Arial,Helvetica,sans-serif" font-size="24" font-weight="800" fill="#fff" text-anchor="middle">X</text>
-  <text x="64" y="47" font-family="Arial,Helvetica,sans-serif" font-size="37" font-weight="800" fill="#0795cb" letter-spacing=".5">ITX</text>
+<svg viewBox="0 0 122 56" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="itX">
+  <defs><linearGradient id="${id}" x1="46" y1="50" x2="112" y2="8" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#0e78c0"/><stop offset=".5" stop-color="#2aa6c0"/><stop offset="1" stop-color="#8fc73e"/></linearGradient></defs>
+  <text x="1" y="43" font-family="Arial,Helvetica,sans-serif" font-size="47" font-weight="700" fill="#f4fafd" letter-spacing="-2">it</text>
+  <path d="M46 11 L59 11 L112 51 L99 51 Z" fill="#0e78c0"/>
+  <path d="M46 51 L59 51 L112 11 L99 11 Z" fill="url(#${id})"/>
 </svg>`;
 
 /* ---------- Header + dropdown navigation ---------- */

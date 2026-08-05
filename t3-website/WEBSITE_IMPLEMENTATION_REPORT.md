@@ -107,7 +107,7 @@ from their parent practice pages, but are kept out of the primary nav to preserv
 - **Legal templates** require counsel review and Qatar localisation.
 - **Arabic** requires professional translation before publishing full `/ar/`.
 - **Form backend**: currently a mailto handoff — connect to a CRM/endpoint for reliable lead capture.
-- **Domain**: confirm `t3solutions.kz` vs a `.qa` domain and update `site.domain` for canonical/SEO.
+- **Domain**: `itx.qa` is configured in `site.domain` for canonical/SEO; connect it to the Vercel project and confirm the `info@itx.qa` mailbox is live.
 
 ## 10. Recommended future enhancements
 - Publish approved case studies and client logos (architecture already built and gated).

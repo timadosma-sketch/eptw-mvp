@@ -23,10 +23,10 @@ These figures come from the official company overview deck and are currently dis
 ## 2. Contact information
 - [ ] ⛔ Public phone number — currently `+7 701 745 8899` (Kazakhstan). Confirm the number to
       show for a Qatar/GCC audience, or add a Qatar contact number.
-- [ ] ⛔ Public email — currently `info@t3solutions.kz`. Confirm, or introduce a `@t3solutions.qa`
+- [ ] ⛔ Public email — currently `info@itx.qa`. Confirm, or introduce a `@itx.qa`
       address.
 - [ ] ⚠️ Official company LinkedIn URL (placeholder in `site.contact.linkedin`).
-- [ ] ⚠️ Primary domain — code is configured for `t3solutions.kz`; update `site.domain` if a
+- [ ] ⚠️ Primary domain — code is configured for `itx.qa`; update `site.domain` if a
       `.qa` domain will be primary.
 
 ## 3. Office locations / regional presence
@@ -102,7 +102,7 @@ flags: {
   showMetrics: true,
   publishCaseStudies: true,      // after client approvals
   enableCybersecurityService: true,
-  analyticsId: "t3solutions.qa", // enables analytics layer
+  analyticsId: "itx.qa", // enables analytics layer
 }
 ```
 Then run `npm run build`.
